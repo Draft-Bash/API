@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "test",
+    "test": "echo 'test'",
     "start": "node app.js"
   },
   "author": "",
