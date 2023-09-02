@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'draftbash'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E163AED2FAF1451EA410D7E2FB834F96 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F17FDCAEF920417AB4FBA2F70859FAD4 }}
           package: .
