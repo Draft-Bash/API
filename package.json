@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo 'test'",
-    "start": "node app.js"
-
+    "start": "node app.js",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
