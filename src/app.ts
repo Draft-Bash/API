@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 const app = express();
 const port = process.env.PORT || 3000;
 const dbConn = require("./db");
@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
   res.send('Hello, TypeScript Express!');
 });
 
-app.get('/users', async (req, res) => {
+app.get('/users', async (req: Request, res: Response) => {
     try {
         const users = await dbConn.query("SELECT * FROM user_account");
         res.json(users.rows);
