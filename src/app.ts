@@ -8,6 +8,8 @@ app.get('/', (req, res) => {
   res.send('Hello, TypeScript Express!');
 });
 
+app.use("/api/v1/users", require("./routes/users"));
+
 app.get('/users', async (req: Request, res: Response) => {
     try {
         const users = await dbConn.query("SELECT * FROM user_account");
