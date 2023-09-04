@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-require('dotenv').config();
+import { JWT_SECRET } from '../env';
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -39,12 +39,11 @@ class UsersModel {
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
-                return [userData, process.env.JWT_SECRET];
-                const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
+                const token = jwt.sign(userData, JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }
 
-            return [userData, process.env.JWT_SECRET];
+            return false;
         } catch (error) {console.log(error)}
     }
 }
