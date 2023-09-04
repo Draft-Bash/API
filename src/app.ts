@@ -10,13 +10,6 @@ app.get('/', (req, res) => {
 
 app.use("/api/v1/users", require("./routes/users"));
 
-app.get('/users', async (req: Request, res: Response) => {
-    try {
-        const users = await dbConn.query("SELECT * FROM user_account");
-        res.json(users.rows);
-    } catch (error) {console.log(error)}
-});
-
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });

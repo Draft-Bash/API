@@ -6,7 +6,7 @@ const createUser = async (req: Request, res: Response) => {
 }
 
 const loginUser = async (req: Request, res: Response) => {
-    res.json(await UsersModel.loginUser(req));
+    res.json("Hello");
 }
 
 module.exports = {
