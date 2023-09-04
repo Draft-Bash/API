@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+require('dotenv').config();
 const db = require("../db");
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 class UsersModel {
     public async createUser(req: Request) {
@@ -25,6 +27,25 @@ class UsersModel {
             ]);
         }
         return uniqueColumns;
+    }
+
+    public async loginUser(req: Request) {
+        try {
+            const { username, email, password} = req.body;
+            const user = await db.query("SELECT * FROM user_account WHERE username = $1 OR email = $2;", [
+                username, email
+            ]);
+            const userData = {user_id: user.rows[0].user_id, username: user.rows[0].username}
+            const validPassword = await bcrypt.compare(password, user.rows[0].password);
+            console.log(userData);
+            console.log(process.env.JWT_SECRET);
+
+            if (validPassword) {
+                const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
+                return token;
+            }
+
+        } catch (error) {console.log(error)}
     }
 }
   

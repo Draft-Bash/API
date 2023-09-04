@@ -5,8 +5,11 @@ const createUser = async (req: Request, res: Response) => {
     res.json(await UsersModel.createUser(req));
 }
 
-
+const loginUser = async (req: Request, res: Response) => {
+    res.json(await UsersModel.loginUser(req));
+}
 
 module.exports = {
-    createUser
+    createUser,
+    loginUser
 }
