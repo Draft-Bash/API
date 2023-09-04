@@ -39,6 +39,7 @@ class UsersModel {
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
+                return [userData, process.env.JWT_SECRET];
                 const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }

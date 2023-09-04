@@ -23,7 +23,6 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          npm uninstall bcrypt
           npm ci
           npm install -g typescript
           npm run build --if-present
