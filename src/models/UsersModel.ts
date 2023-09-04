@@ -36,15 +36,14 @@ class UsersModel {
                 username, email
             ]);
             const userData = {user_id: user.rows[0].user_id, username: user.rows[0].username}
-            const validPassword = await bcrypt.compare(password, user.rows[0].password);
-            console.log(userData);
-            console.log(process.env.JWT_SECRET);
+            const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
                 const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }
 
+            return [userData, process.env.JWT_SECRET];
         } catch (error) {console.log(error)}
     }
 }
