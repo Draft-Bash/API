@@ -9,7 +9,12 @@ const loginUser = async (req: Request, res: Response) => {
     res.json(await UsersModel.loginUser(req));
 }
 
+const checkIfUserAuthenticated = async (req: Request, res: Response) => {
+    res.json(await UsersModel.checkIfUserAuthenticated(req));
+}
+
 module.exports = {
     createUser,
-    loginUser
+    loginUser,
+    checkIfUserAuthenticated
 }

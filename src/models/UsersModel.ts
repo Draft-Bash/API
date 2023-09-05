@@ -29,12 +29,23 @@ class UsersModel {
         return uniqueColumns;
     }
 
+    public async checkIfUserAuthenticated(req: Request) {
+        const jwtToken = req.header("token");
+        try {
+            const user = jwt.verify(jwtToken, JWT_SECRET, {expiresIn: "2hr"});
+            return user;
+        } catch (error) {
+            return false;
+        }
+    }
+
     public async loginUser(req: Request) {
         try {
             const { username, email, password} = req.body;
             const user = await db.query("SELECT * FROM user_account WHERE username = $1 OR email = $2;", [
                 username, email
             ]);
+
             const userData = {user_id: user.rows[0].user_id, username: user.rows[0].username}
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
