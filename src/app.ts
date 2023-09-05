@@ -10,6 +10,7 @@ app.get('/', (req, res) => {
 });
 
 app.use("/api/v1/users", require("./routes/users"));
+app.use("/api/v1/drafts", require("./routes/drafts"));
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
