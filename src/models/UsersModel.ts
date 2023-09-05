@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { JWT_SECRET } from '../env';
+import dotenv from 'dotenv';
+dotenv.config();
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -18,8 +19,8 @@ class UsersModel {
         const duplicateEmails = await db.query("SELECT * FROM user_account WHERE email = $1", [
             user.email
         ])
-        uniqueColumns.isUsernameUnique = duplicateUsernames.length < 1;
-        uniqueColumns.isEmailUnique = duplicateEmails.length < 1;
+        uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;
+        uniqueColumns.isEmailUnique = duplicateEmails.rows.length < 1;
 
         if (uniqueColumns.isUsernameUnique && uniqueColumns.isEmailUnique) {
             await db.query("INSERT INTO user_account (username, email, password) VALUES ($1, $2, $3)", [
@@ -32,7 +33,7 @@ class UsersModel {
     public async checkIfUserAuthenticated(req: Request) {
         const jwtToken = req.header("token");
         try {
-            const user = jwt.verify(jwtToken, JWT_SECRET, {expiresIn: "2hr"});
+            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
             return user;
         } catch (error) {
             return false;
@@ -50,7 +51,7 @@ class UsersModel {
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
-                const token = jwt.sign(userData, JWT_SECRET, {expiresIn: "2hr"});
+                const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }
 

@@ -6,7 +6,7 @@ const getDrafts = async (req: Request, res: Response) => {
 }
 
 const createDraft = async (req: Request, res: Response) => {
-    res.json(await DraftsModel.getDrafts(req));
+    res.json(await DraftsModel.createDraft(req));
 }
 
 module.exports = {

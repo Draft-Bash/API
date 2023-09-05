@@ -3,5 +3,6 @@ const DraftsController = require("../controllers/DraftsController");
 
 draftsRouter.route("/")
     .get(DraftsController.getDrafts)
+    .post(DraftsController.createDraft)
 
 module.exports = draftsRouter;
