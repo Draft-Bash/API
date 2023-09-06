@@ -26,11 +26,11 @@ CREATE TABLE draft (
 CREATE TABLE draft_pick (
     player_id INT REFERENCES nba_player(player_id),
     draft_id INT REFERENCES draft(draft_id),
-    picked_by_user_id INT REFERENCES users(user_id),
+    picked_by_user_id INT REFERENCES user_account(user_id),
     picked_by_bot_number SMALLINT,
     pick_number SMALLINT,
     PRIMARY KEY (player_id, draft_id)
-)
+);
 
 CREATE TABLE draft_order (
     draft_order_id SERIAL PRIMARY KEY,
@@ -50,7 +50,8 @@ CREATE TABLE nba_team (
 
 CREATE TABLE draft_user (
     user_id INT NOT NULL REFERENCES user_account(user_id),
-    draft_id INT NOT NULL REFERENCES draft(draft_id) ON DELETE CASCADE
+    draft_id INT NOT NULL REFERENCES draft(draft_id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, draft_id)
 );
 
 CREATE TABLE nba_player (
@@ -69,7 +70,7 @@ CREATE TABLE nba_player (
 CREATE TABLE points_draft_ranking (
     points_draft_ranking_id SERIAL PRIMARY KEY,
     rank_number SMALLINT NOT NULL,
-    player_id INTEGER NOT NULL REFERENCES nba_player(player_id) ON DELETE CASCADE
+    player_id INTEGER UNIQUE NOT NULL REFERENCES nba_player(player_id) ON DELETE CASCADE
 );
 
 CREATE TABLE nba_player_season_totals (

@@ -9,6 +9,8 @@ class DraftsModel {
     public async getDrafts(req: Request) {
         const userId = req.query.user_id;
 
+        console.log(userId);
+
         const drafts = await db.query(`
         SELECT U.user_id, D.draft_id, draft_type, username, team_count,
         scheduled_by_user_id, draft_type, scoring_type, pick_time_seconds
@@ -20,6 +22,99 @@ class DraftsModel {
         ]);
 
         return drafts.rows;
+    }
+
+    public async getDraft(req: Request) {
+        try {
+            const draftId = req.params.id;
+
+            if (draftId) {
+                const draft = await db.query(`
+                SELECT * 
+                FROM draft 
+                WHERE draft_id = $1`, [
+                    Number(draftId)
+                ]);
+
+                return draft.rows[0];
+            }
+        } catch (error) {}
+    }
+
+    public async getPlayers(req: Request) {
+        const {draftId} = req.query;
+
+        const players = await db.query(
+            `SELECT * 
+            FROM points_draft_ranking AS R
+            INNER JOIN nba_player as P
+            ON R.player_id = P.player_id
+            INNER JOIN nba_player_season_totals AS T
+            ON P.player_id = T.player_id
+            WHERE R.player_id NOT IN (
+              SELECT player_id
+              FROM draft_pick
+              WHERE draft_id = $1
+            )
+            ORDER BY R.rank_number;`, [
+              Number(draftId)
+            ]
+        );
+
+        return players.rows;
+    }
+
+    public async pickPlayer(req: Request) {
+        const {userId, playerId, draftId, botNumber} = req.body;
+        
+        await db.query(
+            `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
+            VALUES ($1, $2, $3, $4)`, [
+                playerId, draftId, userId, botNumber
+            ]
+        );
+    }
+
+    public async getPicks(req: Request) {
+        const {userId, draftId} = req.query;
+        const picks = await db.query(
+            `SELECT *
+            FROM draft_pick AS D
+            INNER JOIN nba_player AS P
+            ON D.player_id = P.player_id
+            WHERE D.picked_by_user_id = $1 AND D.draft_id = $2`, [
+                Number(userId), Number(draftId)
+            ]
+        );
+        return picks.rows;
+    }
+
+    public async getMembers(req: Request) {
+        const draftId = req.query.draftId;
+
+        const draftUserData = await db.query(
+            `SELECT U.user_id, draft_id, username
+            FROM draft_user AS DU
+            INNER JOIN user_account AS U
+            ON DU.user_id = U.user_id
+            WHERE DU.draft_id = $1`, [
+                Number(draftId)
+            ]
+        );
+
+        const draftBotsData = await db.query(
+            `SELECT DISTINCT bot_number
+            FROM draft_order
+            WHERE draft_id = $1 AND bot_number IS NOT NULL
+            ORDER BY bot_number`, [
+                Number(draftId)
+            ]
+        );
+
+        const draftUsers = draftUserData.rows;
+        const draftBots = draftBotsData.rows.map((obj: any) => obj.bot_number);
+        const draftMembers = {"draftUsers": draftUsers, "draftBots": draftBots}
+        return draftMembers;
     }
 
     public async createDraft(req: Request) {

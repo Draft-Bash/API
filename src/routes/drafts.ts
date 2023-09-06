@@ -5,4 +5,17 @@ draftsRouter.route("/")
     .get(DraftsController.getDrafts)
     .post(DraftsController.createDraft)
 
+draftsRouter.route("/players")
+    .get(DraftsController.getPlayers)
+
+draftsRouter.route("/picks")
+    .post(DraftsController.pickPlayer)
+    .get(DraftsController.getPicks)
+
+draftsRouter.route("/members")
+    .get(DraftsController.getMembers)
+
+draftsRouter.route("/:id")
+    .get(DraftsController.getDraft)
+
 module.exports = draftsRouter;

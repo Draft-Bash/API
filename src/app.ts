@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import { createWebSocket } from './websocket';
-import { WEBSOCKET_PORT } from './env';
 const cors = require('cors');
 const app = express();
 const apiPort = process.env.PORT || '3000';
