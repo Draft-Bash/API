@@ -1,17 +1,16 @@
 import { Request, Response } from 'express';
-import dotenv from 'dotenv';
-dotenv.config();
+import { DB_USER, DB_NAME, DB_HOST, DB_PASSWORD, DB_PORT, JWT_SECRET } from "../env";
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 class UsersModel {
     public async createUser(req: Request) {
-        return [process.env.DB_USER,
-        process.env.DB_PASSWORD,
-        process.env.DB_HOST,
-        process.env.DB_PORT,
-        process.env.DB_NAME
+        return [DB_USER,
+        DB_PASSWORD,
+        DB_HOST,
+        DB_PORT,
+        DB_NAME
         ]
         const user = req.body;
         const saltRounds = 10;
@@ -39,7 +38,7 @@ class UsersModel {
     public async checkIfUserAuthenticated(req: Request) {
         const jwtToken = req.header("token");
         try {
-            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
+            const user = jwt.verify(jwtToken, JWT_SECRET, {expiresIn: "2hr"});
             return user;
         } catch (error) {
             return false;
@@ -57,7 +56,7 @@ class UsersModel {
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
-                const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
+                const token = jwt.sign(userData, JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }
 
