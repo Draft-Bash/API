@@ -8,4 +8,4 @@ export const DB_HOST = "fanny.db.elephantsql.com"
 export const DB_PORT = 5432
 export const DB_NAME = "ojklqiko"
 
-export const WEBSOCKET_PORT = '443';
+export const WEBSOCKET_PORT = '80';
