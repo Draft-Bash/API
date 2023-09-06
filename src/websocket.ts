@@ -3,10 +3,8 @@ import { createServer } from 'http'; // Import the HTTP module
 
 const db = require('./db');
 
-export async function createWebSocket(portNumber: string) {
+export async function createWebSocket(httpServer: any) {
 
-    // Create an HTTP server
-    const httpServer = createServer();
 
     // Pass the HTTP server instance to the Socket.io constructor
     const io = new Server(httpServer, {
@@ -52,9 +50,5 @@ export async function createWebSocket(portNumber: string) {
     socket.on('send-players', (players: any, roomId: string) => {
         socket.broadcast.to(roomId).emit('receive-message', players);
     });
-    });
-
-    httpServer.listen(portNumber, () => {
-        console.log(`WebSocket server is running on port ${portNumber}`);
     });
 }
