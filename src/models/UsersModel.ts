@@ -22,8 +22,6 @@ class UsersModel {
         uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;
         uniqueColumns.isEmailUnique = duplicateEmails.rows.length < 1;
 
-        return [user.username, user.email, bcryptPassword];
-
         if (uniqueColumns.isUsernameUnique && uniqueColumns.isEmailUnique) {
             await db.query("INSERT INTO user_account (username, email, password) VALUES ($1, $2, $3)", [
                 user.username, user.email, bcryptPassword
