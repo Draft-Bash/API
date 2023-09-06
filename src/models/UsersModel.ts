@@ -6,12 +6,6 @@ const jwt = require('jsonwebtoken');
 
 class UsersModel {
     public async createUser(req: Request) {
-        return [DB_USER,
-        DB_PASSWORD,
-        DB_HOST,
-        DB_PORT,
-        DB_NAME
-        ]
         const user = req.body;
         const saltRounds = 10;
         const salt = bcrypt.genSaltSync(saltRounds);
