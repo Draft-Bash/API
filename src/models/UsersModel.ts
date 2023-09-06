@@ -13,8 +13,6 @@ class UsersModel {
         const bcryptPassword = bcrypt.hashSync(user.password, salt);
         const uniqueColumns = {isUsernameUnique: true, isEmailUnique: true}
 
-        return user;
-
         const duplicateUsernames = await db.query("SELECT * FROM user_account WHERE username = $1", [
             user.username
         ]);
