@@ -15,6 +15,9 @@ draftsRouter.route("/picks")
 draftsRouter.route("/members")
     .get(DraftsController.getMembers)
 
+draftsRouter.route("/unitTest")
+    .get(DraftsController.unitTest)
+
 draftsRouter.route("/:id")
     .get(DraftsController.getDraft)
 

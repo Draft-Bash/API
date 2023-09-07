@@ -1,10 +1,18 @@
 import { Request, Response } from 'express';
 import { genLinearDraftOrder } from '../utils/genDraftOrder';
 import { genSnakeDraftOrder } from '../utils/genDraftOrder';
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 const db = require("../db");
 
 class DraftsModel {
+
+    public async unitTest(req: Request) {
+        const DB_USER = process.env.DB_USER;
+        return DB_USER;
+    }
 
     public async getDrafts(req: Request) {
         const userId = req.query.user_id;
