@@ -1,5 +1,4 @@
 const Pool = require("pg").Pool;
-import { DB_USER, DB_NAME, DB_HOST, DB_PASSWORD, DB_PORT } from "./env";
 import dotenv from 'dotenv';
 dotenv.config();
 

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { DB_USER, DB_NAME, DB_HOST, DB_PASSWORD, DB_PORT, JWT_SECRET } from "../env";
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -29,7 +28,7 @@ class UsersModel {
                 user.username, user.email, bcryptPassword
             ]);
 
-            const token = jwt.sign(userData.rows[0], JWT_SECRET, {expiresIn: "2hr"});
+            const token = jwt.sign(userData.rows[0], process.env.JWT_SECRET, {expiresIn: "2hr"});
             return {uniqueColumns: uniqueColumns, jwtToken: token};
         }
         return {uniqueColumns: uniqueColumns, jwtToken: null};
@@ -38,7 +37,7 @@ class UsersModel {
     public async checkIfUserAuthenticated(req: Request) {
         const jwtToken = req.header("token");
         try {
-            const user = jwt.verify(jwtToken, JWT_SECRET, {expiresIn: "2hr"});
+            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
             return user;
         } catch (error) {
             return false;
@@ -56,7 +55,7 @@ class UsersModel {
             const validPassword = bcrypt.compareSync(password, user.rows[0].password);
 
             if (validPassword) {
-                const token = jwt.sign(userData, JWT_SECRET, {expiresIn: "2hr"});
+                const token = jwt.sign(userData, process.env.JWT_SECRET, {expiresIn: "2hr"});
                 return token;
             }
 
