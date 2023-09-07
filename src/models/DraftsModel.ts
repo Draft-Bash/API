@@ -125,9 +125,9 @@ class DraftsModel {
             center_slots, utility_slots, bench_slots,
             scheduled_by_user_id, draft_position} = req.body;
             
-            const teamSize = pointguard_slots+shootingguard_slots
-                +guard_slots+smallforward_slots+powerforward_slots
-                +forward_slots+center_slots+utility_slots+bench_slots;
+        const teamSize = pointguard_slots+shootingguard_slots
+            +guard_slots+smallforward_slots+powerforward_slots
+            +forward_slots+center_slots+utility_slots+bench_slots;
     
     
     
@@ -177,8 +177,8 @@ class DraftsModel {
                     scheduled_by_user_id, createdDraft.rows[0].draft_id
                 ]
             );
-    
-            return createdDraft.rows[0].draft_id;
+
+        return createdDraft.rows[0].draft_id;
     }
 }
   

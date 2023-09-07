@@ -10,7 +10,7 @@ const getDraft = async (req: Request, res: Response) => {
 }
 
 const createDraft = async (req: Request, res: Response) => {
-    await DraftsModel.createDraft(req);
+    res.json(await DraftsModel.createDraft(req));
 }
 
 const getMembers = async (req: Request, res: Response) => {

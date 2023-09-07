@@ -22,11 +22,17 @@ class UsersModel {
         uniqueColumns.isEmailUnique = duplicateEmails.rows.length < 1;
 
         if (uniqueColumns.isUsernameUnique && uniqueColumns.isEmailUnique) {
-            await db.query("INSERT INTO user_account (username, email, password) VALUES ($1, $2, $3)", [
+            const userData = await db.query(
+                `INSERT INTO user_account (username, email, password) 
+                VALUES ($1, $2, $3)
+                RETURNING user_id, username`, [
                 user.username, user.email, bcryptPassword
             ]);
+
+            const token = jwt.sign(userData.rows[0], JWT_SECRET, {expiresIn: "2hr"});
+            return {uniqueColumns: uniqueColumns, jwtToken: token};
         }
-        return uniqueColumns;
+        return {uniqueColumns: uniqueColumns, jwtToken: null};
     }
 
     public async checkIfUserAuthenticated(req: Request) {
