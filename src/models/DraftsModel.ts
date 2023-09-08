@@ -9,11 +9,6 @@ const db = require("../db");
 
 class DraftsModel {
 
-    public async unitTest(req: Request) {
-        const DB_USER = process.env.DB_USER;
-        return DB_USER;
-    }
-
     public async getDrafts(req: Request) {
         const userId = req.query.user_id;
 

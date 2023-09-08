@@ -29,10 +29,6 @@ const getPicks = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getPicks(req));
 }
 
-const unitTest = async (req: Request, res: Response) => {
-    res.json(await DraftsModel.unitTest(req));
-}
-
 module.exports = {
     getDrafts,
     createDraft,
@@ -40,6 +36,5 @@ module.exports = {
     getMembers,
     getPlayers,
     pickPlayer,
-    getPicks,
-    unitTest
+    getPicks
 }
