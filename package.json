@@ -2,7 +2,6 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo 'test'",
@@ -24,6 +23,7 @@
     "typescript": "^5.2.2"
   },
   "devDependencies": {
+    "@types/socket.io": "^3.0.2",
     "csv-parser": "^3.0.0",
     "pg-promise": "^11.5.4"
   }
