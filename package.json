@@ -23,6 +23,7 @@
     "typescript": "^5.2.2"
   },
   "devDependencies": {
+    "@types/socket.io": "^3.0.2",
     "csv-parser": "^3.0.0",
     "pg-promise": "^11.5.4"
   }

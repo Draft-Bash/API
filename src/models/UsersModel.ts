@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 class UsersModel {
     // Creates a user
@@ -21,6 +24,7 @@ class UsersModel {
         const duplicateEmails = await db.query("SELECT * FROM user_account WHERE email = $1", [
             user.email
         ])
+        console.log(duplicateUsernames.rows.length);
         uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;
         uniqueColumns.isEmailUnique = duplicateEmails.rows.length < 1;
 
@@ -54,8 +58,10 @@ class UsersModel {
             This is used to check if the logged in user has a currently valid jwt token.
             A token expires every 2 hours. */
             const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
+            console.log(user);
             return user;
         } catch (error) {
+            console.log("hello");
             return false;
         }
     }
