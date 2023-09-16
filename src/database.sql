@@ -23,15 +23,6 @@ CREATE TABLE draft (
     scheduled_by_user_id INT REFERENCES user_account(user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE draft_pick (
-    player_id INT REFERENCES nba_player(player_id),
-    draft_id INT REFERENCES draft(draft_id),
-    picked_by_user_id INT REFERENCES user_account(user_id),
-    picked_by_bot_number SMALLINT,
-    pick_number SMALLINT,
-    PRIMARY KEY (player_id, draft_id)
-);
-
 CREATE TABLE draft_order (
     draft_order_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES user_account(user_id),
@@ -65,6 +56,15 @@ CREATE TABLE nba_player (
     is_powerforward BOOLEAN,
     is_center BOOLEAN,
     team_id INT REFERENCES nba_team(team_id) ON DELETE SET NULL
+);
+
+CREATE TABLE draft_pick (
+    player_id INT REFERENCES nba_player(player_id),
+    draft_id INT REFERENCES draft(draft_id),
+    picked_by_user_id INT REFERENCES user_account(user_id),
+    picked_by_bot_number SMALLINT,
+    pick_number SMALLINT,
+    PRIMARY KEY (player_id, draft_id)
 );
 
 CREATE TABLE points_draft_ranking (
