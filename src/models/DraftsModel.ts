@@ -3,16 +3,13 @@ import { genLinearDraftOrder } from '../utils/genDraftOrder';
 import { genSnakeDraftOrder } from '../utils/genDraftOrder';
 import dotenv from 'dotenv';
 dotenv.config();
-
-
-const db = require("../db");
+const db = require("../db"); // Connection for querying the Postgres database
 
 class DraftsModel {
 
+    // Retrieves summary data of all the drafts a user has created or joined
     public async getDrafts(req: Request) {
         const userId = req.query.user_id;
-
-        console.log(userId);
 
         const drafts = await db.query(`
         SELECT U.user_id, D.draft_id, draft_type, username, team_count,
@@ -27,6 +24,9 @@ class DraftsModel {
         return drafts.rows;
     }
 
+    /* Fetches basic draft info for a draft. 
+    This includes settings like number of teams, team size, etc
+    */
     public async getDraft(req: Request) {
         try {
             const draftId = req.params.id;
@@ -44,6 +44,7 @@ class DraftsModel {
         } catch (error) {}
     }
 
+    // Gets all undrafted players that are currently in a draft
     public async getPlayers(req: Request) {
         const {draftId} = req.query;
 
@@ -67,7 +68,9 @@ class DraftsModel {
         return players.rows;
     }
 
+    // Adds a picked player from a draft to the draft_pick table
     public async pickPlayer(req: Request) {
+        // A player can be picked by a user or bot.
         const {userId, playerId, draftId, botNumber} = req.body;
         
         await db.query(
@@ -78,6 +81,7 @@ class DraftsModel {
         );
     }
 
+    // Gets all picks made by a user in a draft
     public async getPicks(req: Request) {
         const {userId, draftId} = req.query;
         const picks = await db.query(
@@ -92,9 +96,11 @@ class DraftsModel {
         return picks.rows;
     }
 
+    // Gets all members in the draft
     public async getMembers(req: Request) {
         const draftId = req.query.draftId;
 
+        // Gets all users the draft
         const draftUserData = await db.query(
             `SELECT U.user_id, draft_id, username
             FROM draft_user AS DU
@@ -105,6 +111,7 @@ class DraftsModel {
             ]
         );
 
+        // If the draft has members that are not a user, then they are a 'bot'
         const draftBotsData = await db.query(
             `SELECT DISTINCT bot_number
             FROM draft_order
@@ -120,20 +127,21 @@ class DraftsModel {
         return draftMembers;
     }
 
+    // Creates a draft with various settings configured.
     public async createDraft(req: Request) {
-        
         const {draft_type, scoring_type, pick_time_seconds,
             team_count, pointguard_slots, shootingguard_slots,
             guard_slots, smallforward_slots, powerforward_slots, forward_slots,
             center_slots, utility_slots, bench_slots,
             scheduled_by_user_id, draft_position} = req.body;
             
+        // Sum of all position slots gives the total team size each team has
         const teamSize = pointguard_slots+shootingguard_slots
             +guard_slots+smallforward_slots+powerforward_slots
             +forward_slots+center_slots+utility_slots+bench_slots;
     
-    
-    
+
+            // Creates and returns the draft
             const createdDraft = await db.query(
                 `INSERT INTO draft (draft_type, scoring_type, pick_time_seconds, 
                     team_count, pointguard_slots, shootingguard_slots, guard_slots, 
@@ -147,15 +155,19 @@ class DraftsModel {
                 ]
             );
     
-    
+            // Order of which pick each member has
             let draftOrder: number[] = []
+
             if (draft_type == "snake") {
+                // Generates the draft order with a snake algorithm
                 draftOrder = genSnakeDraftOrder(team_count, teamSize);
             }
             else if (draft_type == "linear") {
+                // Generates the draft order with a linear algorithm
                 draftOrder = genLinearDraftOrder(team_count, teamSize);
             }
     
+            // Inserts the draft order into the database
             let pickNumber = 1;
             for (const order of draftOrder) {
                 if (order == draft_position) {
@@ -174,6 +186,8 @@ class DraftsModel {
                 pickNumber += 1;
             }
     
+            /* Inserts the draft's users' ids into the draft_user table so 
+            that we know which drafts a user belongs to */
             await db.query(
                 `INSERT INTO draft_user (user_id, draft_id)
                 VALUES ($1, $2)`, [
@@ -181,6 +195,7 @@ class DraftsModel {
                 ]
             );
 
+        // Returns the draft id the draft that was created.
         return createdDraft.rows[0].draft_id;
     }
 }
