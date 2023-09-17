@@ -8,7 +8,7 @@
     "start": "node dist/app.js",
     "seed": "npx knex seed:run",
     "dev": "npx knex migrate:latest & nodemon src/app.ts",
-    "build": "tsc"
+    "build": "npx knex migrate:latest & tsc"
   },
   "keywords": [],
   "author": "",
