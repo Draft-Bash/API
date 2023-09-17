@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - draftbash-test
 
 on:
@@ -27,7 +24,7 @@ jobs:
           npm install -g typescript
           npm run build --if-present
           npm run test --if-present
-      
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
@@ -55,3 +52,8 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_14D3C38EC8DD47998C85699A2D026B41 }}
           package: .
+
+      - name: Run knex migrate:latest
+        run: |
+          cd ${{ github.workspace }}
+          npx knex migrate:latest
