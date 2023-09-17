@@ -20,7 +20,7 @@ jobs:
 
       - name: Set up environment variables
         run: |
-          echo "DB_PASSWORD=$TEST_DB_PASSWORD_SECRET" >> .env
+          echo "DB_PASSWORD=${{ secrets.TEST_DB_PASSWORD_SECRET }}" >> .env
           echo "DB_USER=taycozct" >> .env
           echo "DB_HOST=berry.db.elephantsql.com" >> .env
           echo "DB_PORT=5432" >> .env
