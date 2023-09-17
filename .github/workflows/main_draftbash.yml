@@ -20,7 +20,7 @@ jobs:
 
       - name: Generate .env file
         run: |
-          echo "DB_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD_SECRET }}" > .env
+          echo "DB_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD }}" > .env
           echo "DB_USER=ojklqiko" >> .env
           echo "DB_HOST=fanny.db.elephantsql.com" >> .env
           echo "DB_PORT=5432" >> .env
