@@ -1,7 +1,7 @@
-import fs from 'fs';
-import csvParser from 'csv-parser';
-import pg from 'pg';
-import dotenv from 'dotenv';
+const fs = require('fs');
+const csvParser = require('csv-parser');
+const pg = require('pg');
+const dotenv = require('dotenv');
 dotenv.config();
 
 // Database connection configuration
@@ -9,7 +9,7 @@ const playerDbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: 5432,
   database: process.env.DB_NAME
 };
 
