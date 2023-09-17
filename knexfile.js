@@ -14,7 +14,10 @@ module.exports = {
       port: process.env.DB_PORT
     },
     migrations: {
-      tableName: 'knex_migrations'
-    }
+      directory: './migrations/schema', // Schema migrations directory
+    },
+    seeds: {
+      directory: './migrations/seeds', // Seed migrations directory
+    },
   }
 };

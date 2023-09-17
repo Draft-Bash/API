@@ -1,7 +1,7 @@
-import fs from 'fs';
-import csvParser from 'csv-parser';
-import pg from 'pg';
-import dotenv from 'dotenv';
+const fs = require('fs');
+const csvParser = require('csv-parser');
+const pg = require('pg');
+const dotenv = require('dotenv');
 dotenv.config();
 
 // Database connection configuration
@@ -16,15 +16,15 @@ const dbConfig = {
 // CSV file path
 const csvFilePath = 'nbaData/nbaTeams.csv';
 
-// Function to read data from CSV and insert into database
-export async function insertTeamData() {
-  const client = new pg.Client(dbConfig);
+// Export the seed function directly
+module.exports = function () {
+  return new Promise(async (resolve, reject) => {
+    const client = new pg.Client(dbConfig);
 
-  try {
-    await client.connect();
-    console.log('Connected to the database.');
+    try {
+      await client.connect();
+      console.log('Connected to the database.');
 
-    await new Promise((resolve, reject) => {
       const data = [];
       fs.createReadStream(csvFilePath)
         .pipe(csvParser())
@@ -41,18 +41,18 @@ export async function insertTeamData() {
               );
               console.log('Inserted row:', row);
             }
-            resolve();
+            console.log('Data insertion completed.');
+            resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            reject(error);
+            reject(error); // Reject the promise in case of an error
+          } finally {
+            // Close the database connection
+            client.end();
           }
         });
-    });
-
-    console.log('Data insertion completed.');
-  } catch (error) {
-    console.error('Error connecting to the database:', error.message);
-  } finally {
-    // Close the database connection
-    client.end();
-  }
-}
+    } catch (error) {
+      console.error('Error connecting to the database:', error.message);
+      reject(error); // Reject the promise if the connection fails
+    }
+  });
+};

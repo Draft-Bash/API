@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo 'test'",
     "start": "node dist/app.js",
-    "build": "tsc"
+    "build": "tsc & npx knex migrate:latest"
   },
   "keywords": [],
   "author": "",
