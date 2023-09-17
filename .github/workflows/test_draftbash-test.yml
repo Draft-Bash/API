@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - draftbash-test
 
 on:
@@ -21,13 +18,21 @@ jobs:
         with:
           node-version: '18.x'
 
+      - name: Set up environment variables
+        run: |
+          echo "DB_PASSWORD=${{ secrets.TEST_DB_PASSWORD_SECRET }}" >> .env
+          echo "DB_USER=taycozct" >> .env
+          echo "DB_HOST=berry.db.elephantsql.com" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_NAME=taycozct" >> .env
+
       - name: npm install, build, and test
         run: |
           npm ci
           npm install -g typescript
           npm run build --if-present
           npm run test --if-present
-      
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:

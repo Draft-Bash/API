@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo 'test'",
     "start": "node dist/app.js",
-    "build": "tsc"
+    "seed": "npx knex seed:run",
+    "dev": "npx knex migrate:latest & nodemon src/app.ts",
+    "build": "tsc & npx knex migrate:latest"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +20,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "knex": "^2.5.1",
     "pg": "^8.11.3",
     "socket.io": "^4.7.2",
     "typescript": "^5.2.2"
