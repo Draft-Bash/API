@@ -39,9 +39,29 @@ export async function createWebSocket(httpServer: any) {
             // sends the draft order the client's socket
             io.in(roomId).emit('send-draft-order', draftOrder);
 
+            const availablePlayers = await fetchAvailablePlayers(roomId);
+            io.in(roomId).emit('receive-available-players', availablePlayers);
+
+
             const timeData = await db.query("SELECT pick_time_seconds FROM draft WHERE draft_id = $1", [
             roomId
             ]);
+        });
+
+        socket.on('pick-player', async (playerId: string, userId: string, roomId: string) => {
+            try {
+                await db.query(
+                    `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
+                    VALUES ($1, $2, $3, $4)`, [
+                        playerId, roomId, userId, null
+                    ]
+                );
+            } catch (error) {
+                console.log(error)
+            }
+    
+            const availablePlayers = await fetchAvailablePlayers(roomId);
+            io.in(roomId).emit('receive-available-players', availablePlayers);
         });
 
         // Broadcasts a message to users in the draft room
@@ -49,4 +69,23 @@ export async function createWebSocket(httpServer: any) {
             socket.to(roomId).emit('receive-message', message);
         });
     });
+}
+
+async function fetchAvailablePlayers(roomId: string) {
+    let availablePlayers= await db.query(
+        `SELECT * 
+        FROM points_draft_ranking AS R
+        INNER JOIN nba_player as P
+        ON R.player_id = P.player_id
+        INNER JOIN nba_player_season_totals AS T
+        ON P.player_id = T.player_id
+        WHERE R.player_id NOT IN (
+          SELECT player_id
+          FROM draft_pick
+          WHERE draft_id = $1
+        )
+        ORDER BY R.rank_number;`,
+        [roomId]
+    );
+    return availablePlayers.rows;
 }
