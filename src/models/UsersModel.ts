@@ -59,7 +59,6 @@ class UsersModel {
             const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
             return user;
         } catch (error) {
-            console.log("hello");
             return false;
         }
     }
