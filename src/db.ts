@@ -8,7 +8,8 @@ const dbConn = new Pool({
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    ssl: JSON.parse(process.env.SSL as string)
 });
 
 module.exports = dbConn;

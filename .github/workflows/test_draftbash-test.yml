@@ -21,10 +21,11 @@ jobs:
       - name: Set up environment variables
         run: |
           echo "DB_PASSWORD=${{ secrets.TEST_DB_PASSWORD_SECRET }}" >> .env
-          echo "DB_USER=taycozct" >> .env
-          echo "DB_HOST=berry.db.elephantsql.com" >> .env
+          echo "DB_USER=stephenpfeddes" >> .env
+          echo "DB_HOST=ep-falling-moon-01056686-pooler.us-east-2.aws.neon.tech" >> .env
           echo "DB_PORT=5432" >> .env
-          echo "DB_NAME=taycozct" >> .env
+          echo "DB_NAME=neondb" >> .env
+          echo "SSL=true" >> .env
 
       - name: npm install, build, and test
         run: |
