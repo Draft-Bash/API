@@ -118,6 +118,7 @@ export async function fetchCurrentDraftOrder(roomId: string) {
         FROM draft_order AS O
         LEFT JOIN user_account AS U ON O.user_id = U.user_id
         WHERE draft_id = $1
+        ORDER BY draft_order_id
         LIMIT 40`,
         [roomId]
       );
