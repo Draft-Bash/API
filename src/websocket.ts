@@ -127,6 +127,13 @@ export async function createWebSocket(httpServer: any) {
             WHERE draft_order_id = (SELECT MIN(draft_order_id) FROM draft_order WHERE draft_id = $1)`,
 						[roomId]
 					);
+
+					// Reset the countdown timer to its default value
+					const draftSettings = await fetchDraftSettings(roomId);
+					const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
+					remainingTimes[roomId] = defaultPickTimeInSeconds;
+
+					// Start the countdown timer with the updated remaining time
 					startCountdown(roomId);
 				} catch (error) {
 					console.log(error);
