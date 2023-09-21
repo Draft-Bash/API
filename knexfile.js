@@ -11,7 +11,8 @@ module.exports = {
       user: process.env.DB_USER, // Your PostgreSQL username
       password: process.env.DB_PASSWORD, // Your PostgreSQL password
       database: process.env.DB_NAME, // Your PostgreSQL database name
-      port: process.env.DB_PORT
+      port: process.env.DB_PORT,
+      ssl: JSON.parse(process.env.SSL)
     },
     migrations: {
       directory: './migrations/schema', // Schema migrations directory
