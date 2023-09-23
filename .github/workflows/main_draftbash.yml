@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - draftbash-test
+name: Build and deploy Node.js app to Azure Web App - draftbash
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Generate .env file
+      - name: Set up environment variables
         run: |
           echo "DB_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD }}" > .env
           echo "DB_USER=stephenpfeddes" >> .env
@@ -34,7 +34,7 @@ jobs:
           npm install -g typescript
           npm run build --if-present
           npm run test --if-present
-
+      
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
@@ -58,7 +58,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
-          app-name: 'draftbash-test'
+          app-name: 'draftbash'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_14D3C38EC8DD47998C85699A2D026B41 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7E35E13038494F269980AD74C201E6D1 }}
           package: .
