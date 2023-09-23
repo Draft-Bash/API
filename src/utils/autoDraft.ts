@@ -16,6 +16,13 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
                 Number(userId), Number(draftId)
             ]
         );
+        await db.query(
+            `UPDATE draft_user
+            SET is_autopick_on=true
+            WHERE user_id=$1 AND draft_id=$2`, [
+                Number(userId), Number(draftId)
+            ]
+        );
         picks = userPicks.rows
     }
     else if (botNumber) {
@@ -43,32 +50,36 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
         bench: Array.from({ length: draftRules.bench_slots }, () => null)
     };
 
-    picks.forEach((player: Player) => {
-        addPlayer(player, rosterSpots);
-    });
-
-    const undraftedPlayers = await fetchAvailablePlayers(draftId);
-    let n = 3;
-    let isPlayerDrafted = false;
-    while (!isPlayerDrafted) {
-
-        for (let i=0; i<n; i++) {
-            const randomIndex = Math.floor(Math.random() * n);
-            if (addPlayer(undraftedPlayers[randomIndex], rosterSpots)) {
-                isPlayerDrafted = true;
-                await db.query(
-                    `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
-                    VALUES ($1, $2, $3, $4)`,
-                    [undraftedPlayers[randomIndex].player_id, draftId, userId, botNumber]
-                );
-                await db.query(
-                    `DELETE FROM draft_order 
-                    WHERE draft_order_id = (SELECT MIN(draft_order_id) FROM draft_order WHERE draft_id = $1)`,
-                    [draftId]
-                );
-                break;
+    try {
+        picks.forEach((player: Player) => {
+            addPlayer(player, rosterSpots);
+        });
+    
+        const undraftedPlayers = await fetchAvailablePlayers(draftId);
+        let n = 3;
+        let isPlayerDrafted = false;
+        while (!isPlayerDrafted) {
+    
+            for (let i=0; i<n; i++) {
+                const randomIndex = Math.floor(Math.random() * n);
+                if (addPlayer(undraftedPlayers[randomIndex], rosterSpots)) {
+                    isPlayerDrafted = true;
+                    await db.query(
+                        `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
+                        VALUES ($1, $2, $3, $4)`,
+                        [undraftedPlayers[randomIndex].player_id, draftId, userId, botNumber]
+                    );
+                    await db.query(
+                        `DELETE FROM draft_order 
+                        WHERE draft_order_id = (SELECT MIN(draft_order_id) FROM draft_order WHERE draft_id = $1)`,
+                        [draftId]
+                    );
+                    break;
+                }
             }
+            n+=1;
         }
-        n+=1;
+    } catch (error) {
+        console.log(error)
     }
 }
