@@ -26,6 +26,7 @@ jobs:
           echo "DB_PORT=5432" >> .env
           echo "DB_NAME=neondb" >> .env
           echo "SSL=true" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" > .env
 
       - name: npm install, build, and test
         run: |
