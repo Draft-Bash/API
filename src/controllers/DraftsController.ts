@@ -13,6 +13,14 @@ const createDraft = async (req: Request, res: Response) => {
     res.json(await DraftsModel.createDraft(req));
 }
 
+const getAutodraftStatus = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.getAutodraftStatus(req));
+}
+
+const toggleAutodraft = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.toggleAutodraft(req));
+}
+
 const getMembers = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getMembers(req));
 }
@@ -36,5 +44,7 @@ module.exports = {
     getMembers,
     getPlayers,
     pickPlayer,
-    getPicks
+    getPicks,
+    getAutodraftStatus,
+    toggleAutodraft
 }

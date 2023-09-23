@@ -5,6 +5,10 @@ draftsRouter.route("/")
     .get(DraftsController.getDrafts)
     .post(DraftsController.createDraft)
 
+draftsRouter.route("/autodraft")
+    .get(DraftsController.getAutodraftStatus)
+    .post(DraftsController.toggleAutodraft)
+
 draftsRouter.route("/players")
     .get(DraftsController.getPlayers)
 

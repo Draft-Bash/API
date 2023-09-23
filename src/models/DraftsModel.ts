@@ -24,6 +24,30 @@ class DraftsModel {
         return drafts.rows;
     }
 
+    public async toggleAutodraft(req: Request) {
+        await db.query(`
+            UPDATE draft_user
+            SET is_autopick_on=$1
+            WHERE user_id=$2 AND draft_id=$3`, [
+                req.body.isAutopickOn, req.body.userId, req.body.draftId
+            ]
+        );
+
+        return "Success!";
+    }
+
+    public async getAutodraftStatus(req: Request) {
+        const autopickStatus = await db.query(`
+            SELECT is_autopick_on
+            FROM draft_user
+            WHERE user_id=$1 AND draft_id=$2`, [
+                req.query.userId, req.query.draftId
+            ]
+        );
+
+        return autopickStatus.rows[0].is_autopick_on
+    }
+
     /* Fetches basic draft info for a draft. 
     This includes settings like number of teams, team size, etc
     */
