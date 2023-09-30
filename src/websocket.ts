@@ -1,166 +1,166 @@
-import { Server, Socket } from "socket.io";
-import { createServer } from "http"; // Import the HTTP module
-import { DraftTurn, fetchRoster } from "./utils/draft";
+import { Server, Socket } from 'socket.io';
+import { createServer, Server as HttpServer } from 'http';
+import { DraftTurn, fetchRoster } from './utils/draft';
 import {
-	fetchAvailablePlayers,
-	fetchCurrentDraftOrder,
-	fetchDraftSettings,
-} from "./utils/draft";
-import { autoDraft } from "./utils/autoDraft";
+  fetchAvailablePlayers,
+  fetchCurrentDraftOrder,
+  fetchDraftSettings,
+} from './utils/draft';
+import { autoDraft } from './utils/autoDraft';
+import { Pool, QueryResult } from 'pg';
+const db = require('./db');
 
-const db = require("./db");
+// Define interfaces for draft room timers and remaining times.
+interface DraftRoomTimers {
+  [roomId: string]: NodeJS.Timeout | undefined;
+}
 
-export async function createWebSocket(httpServer: any) {
-	// Pass the HTTP server instance to the Socket.io constructor
-	const io = new Server(httpServer, {
-		cors: {
-			origin: "*", // Allow requests from this origin
-			methods: ["GET", "POST"], // Specify the allowed HTTP methods
-			allowedHeaders: ["Authorization", "Content-Type"], // Specify allowed headers
-			credentials: true, // Allow credentials (e.g., cookies, authorization headers)
-		},
-	});
+interface RemainingTimes {
+  [roomId: string]: number;
+}
 
-	const draftRoomTimers: Record<string, NodeJS.Timeout | undefined> = {}; // Timers for each draft room
-	const remainingTimes: Record<string, number> = {}; // Remaining time for each draft room
-	let isAutopickOn = false;
+export async function createWebSocket(httpServer: HttpServer) {
+  const io: Server = new Server(httpServer, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['Authorization', 'Content-Type'],
+      credentials: true,
+    },
+  });
 
-	async function startCountdown(roomId: string) {
-		if (draftRoomTimers[roomId] !== undefined) {
-			clearInterval(draftRoomTimers[roomId]);
-		}
+  const draftRoomTimers: DraftRoomTimers = {}; // Timers for each draft room
+  const remainingTimes: RemainingTimes = {}; // Remaining time for each draft room
+  let isAutodraftOn = false;
 
-		const draftSettings = await fetchDraftSettings(roomId); // Default pick time duration in seconds
-		const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
-		let remainingTime = remainingTimes[roomId] ?? defaultPickTimeInSeconds;
-		const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
-		const userDraftTurn = currentDraftOrder[0];
-		isAutopickOn = false;
-		if (userDraftTurn && userDraftTurn.user_id) {
-			let draftUserSettings = await db.query(
-				`SELECT is_autopick_on FROM draft_user
-				WHERE user_id=$1 AND draft_id=$2`, [
-					Number(userDraftTurn.user_id), Number(roomId)
-				]
-			);
-			isAutopickOn = draftUserSettings.rows[0].is_autopick_on;
-		}
+  async function startCountdown(roomId: string) {
+    if (draftRoomTimers[roomId] !== undefined) {
+      clearInterval(draftRoomTimers[roomId]);
+    }
 
-		if (currentDraftOrder.length > 0) {
-			io.in(roomId).emit("update-draft-turn", userDraftTurn.user_id);
+    const draftSettings = await fetchDraftSettings(roomId); // Default pick time duration in seconds
+    const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
+    let remainingTime = remainingTimes[roomId] ?? defaultPickTimeInSeconds;
+    const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
+    const userDraftTurn = currentDraftOrder[0];
 
-			// Emit the current remaining time to all users in the room
-			io.in(roomId).emit("update-clock", remainingTime);
+    if (currentDraftOrder.length > 0) {
+      io.in(roomId).emit('update-draft-turn', userDraftTurn.user_id);
 
-			draftRoomTimers[roomId] = setInterval(async () => {
-				if (currentDraftOrder[0].bot_number) {
-					await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
-					const newDraftOrder = await fetchCurrentDraftOrder(roomId);
-					const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
-					io.in(roomId).emit("send-draft-order", newDraftOrder);
-					io.in(roomId).emit(
-						"receive-available-players",
-						currentAvailablePlayers
-					);
-                    clearInterval(draftRoomTimers[roomId]);
-					remainingTimes[roomId] = defaultPickTimeInSeconds;
-					startCountdown(roomId);
-				}
-				if (remainingTimes[roomId] <= 0 || isAutopickOn) {
-					// Stop the timer when the remaining time reaches 0
-					if (draftRoomTimers[roomId] !== undefined) {
-						clearInterval(draftRoomTimers[roomId]);
-						remainingTimes[roomId] = defaultPickTimeInSeconds; // Reset the timer to default time
-						await autoDraft(userDraftTurn.user_id, null, roomId);
-						const roster = await fetchRoster(roomId, userDraftTurn.user_id);
-						io.in(roomId).emit("autodraft-enabled", userDraftTurn.user_id);
-						io.in(roomId).emit("update-roster", {players: roster, userId: userDraftTurn.user_id});
-						const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
-						io.in(roomId).emit("receive-available-players",currentAvailablePlayers);
-						const newDraftOrder = await fetchCurrentDraftOrder(roomId);
-						io.in(roomId).emit("send-draft-order", newDraftOrder);
-						startCountdown(roomId); // Restart the countdown timer with default time
-					}
-				} else {
-					remainingTimes[roomId] -= 1; // Decrement the remaining time by 1 second
+      // Emit the current remaining time to all users in the room
+      io.in(roomId).emit('update-clock', remainingTime);
 
-					// Emit the updated remaining time to all users in the room
-					io.in(roomId).emit("update-clock", remainingTimes[roomId]);
-				}
-			}, 1000); // Update every second
-		} else {
-			console.log("The draft is over.");
-			return;
-		}
-	}
+      draftRoomTimers[roomId] = setInterval(async () => {
+        if (currentDraftOrder[0].bot_number) {
+          await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
+          const newDraftOrder = await fetchCurrentDraftOrder(roomId);
+          const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
+          io.in(roomId).emit('send-draft-order', newDraftOrder);
+          io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
+          clearInterval(draftRoomTimers[roomId]);
+          remainingTimes[roomId] = defaultPickTimeInSeconds;
+          startCountdown(roomId);
+        }
+        if (remainingTimes[roomId] <= 0 || isAutodraftOn) {
+          // Stop the timer when the remaining time reaches 0
+          if (draftRoomTimers[roomId] !== undefined) {
+            clearInterval(draftRoomTimers[roomId]);
+            remainingTimes[roomId] = defaultPickTimeInSeconds; // Reset the timer to default time
 
-	io.on("connection", (socket: Socket) => {
-		let draftOrder: number[] = [];
+            await autoDraft(userDraftTurn.user_id, null, roomId);
+            const roster = await fetchRoster(roomId, userDraftTurn.user_id);
 
-		socket.on("join-room", async (roomIdParam: string) => {
-			const roomId = roomIdParam; // Store the current room ID
-			socket.join(roomId); // User joins the socket room for the draft
-			const draftSettings = await fetchDraftSettings(roomId); // Default pick time duration in seconds
-			const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
+            isAutodraftOn = true;
+            io.in(roomId).emit('autodraft-enabled', userDraftTurn.user_id);
+            io.in(roomId).emit('update-roster', { players: roster, userId: userDraftTurn.user_id });
 
-			// Initialize the remaining time for this room if not already set
-			if (!remainingTimes[roomId]) {
-				remainingTimes[roomId] = defaultPickTimeInSeconds; // Set initial remaining time to default
-			}
+            const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
+            io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
 
-			/* Fetch the current draft order so that it can be sent to the users
-      in the draft every time it's updated. */
-			const draftOrder = await fetchCurrentDraftOrder(roomId);
-			io.in(roomId).emit("send-draft-order", draftOrder);
+            const newDraftOrder = await fetchCurrentDraftOrder(roomId);
+            io.in(roomId).emit('send-draft-order', newDraftOrder);
 
+            startCountdown(roomId); // Restart the countdown timer with default time
+          }
+        } else {
+          remainingTimes[roomId] -= 1; // Decrement the remaining time by 1 second
 
-			// Start the countdown timer when a user joins the draft room
-			startCountdown(roomId);
+          // Emit the updated remaining time to all users in the room
+          io.in(roomId).emit('update-clock', remainingTimes[roomId]);
+        }
+      }, 1000); // Update every second
+    } else {
+      console.log('The draft is over.');
+      return;
+    }
+  }
 
-			// Fetch and emit available players to the draft room
-			const availablePlayers = await fetchAvailablePlayers(roomId);
-			io.in(roomId).emit("receive-available-players", availablePlayers);
+  io.on('connection', (socket: Socket) => {
+    let draftOrder: number[] = [];
 
-			// Emit the current remaining time to the newly joined user
-			socket.emit("update-clock", remainingTimes[roomId]);
-		});
+    socket.on('join-room', async (roomIdParam: string) => {
+      const roomId = roomIdParam; // Store the current room ID
+      socket.join(roomId); // User joins the socket room for the draft
+      const draftSettings = await fetchDraftSettings(roomId); // Default pick time duration in seconds
+      const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
 
-		socket.on('update-autodraft', (isAutodraftOn: boolean) => {
-			isAutopickOn = isAutodraftOn;
-		});
+      // Initialize the remaining time for this room if not already set
+      if (!remainingTimes[roomId]) {
+        remainingTimes[roomId] = defaultPickTimeInSeconds; // Set initial remaining time to default
+      }
 
-		socket.on(
-			"pick-player",
-			async (playerId: string, userId: string, roomId: string) => {
-				try {
-					await db.query(
-						`INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
+      /* Fetch the current draft order so that it can be sent to the users
+        in the draft every time it's updated. */
+      const draftOrder = await fetchCurrentDraftOrder(roomId);
+      io.in(roomId).emit('send-draft-order', draftOrder);
+
+      // Start the countdown timer when a user joins the draft room
+      startCountdown(roomId);
+
+      // Fetch and emit available players to the draft room
+      const availablePlayers = await fetchAvailablePlayers(roomId);
+      io.in(roomId).emit('receive-available-players', availablePlayers);
+
+      // Emit the current remaining time to the newly joined user
+      socket.emit('update-clock', remainingTimes[roomId]);
+    });
+
+    socket.on('update-autodraft', (isAuto: boolean) => {
+      isAutodraftOn = isAuto;
+    });
+
+    socket.on(
+      'pick-player',
+      async (playerId: string, userId: string, roomId: string) => {
+        try {
+          await db.query(
+            `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
           VALUES ($1, $2, $3, $4)`,
-						[playerId, roomId, userId, null]
-					);
-					await db.query(
-						`DELETE FROM draft_order 
+            [playerId, roomId, userId, null]
+          );
+          await db.query(
+            `DELETE FROM draft_order 
             WHERE draft_order_id = (SELECT MIN(draft_order_id) FROM draft_order WHERE draft_id = $1)`,
-						[roomId]
-					);
+            [roomId]
+          );
 
-					// Reset the countdown timer to its default value
-					const draftSettings = await fetchDraftSettings(roomId);
-					const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
-					remainingTimes[roomId] = defaultPickTimeInSeconds;
+          // Reset the countdown timer to its default value
+          const draftSettings = await fetchDraftSettings(roomId);
+          const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
+          remainingTimes[roomId] = defaultPickTimeInSeconds;
 
-					// Start the countdown timer with the updated remaining time
-					startCountdown(roomId);
-				} catch (error) {
-					console.log(error);
-				}
+          // Start the countdown timer with the updated remaining time
+          startCountdown(roomId);
+        } catch (error) {
+          console.log(error);
+        }
 
-				// Fetch and emit available players to the draft room after a pick
-				const availablePlayers = await fetchAvailablePlayers(roomId);
-				io.in(roomId).emit("receive-available-players", availablePlayers);
-				const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
-				io.in(roomId).emit("send-draft-order", currentDraftOrder);
-			}
-		);
-	});
+        // Fetch and emit available players to the draft room after a pick
+        const availablePlayers = await fetchAvailablePlayers(roomId);
+        io.in(roomId).emit('receive-available-players', availablePlayers);
+        const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
+        io.in(roomId).emit('send-draft-order', currentDraftOrder);
+      }
+    );
+  });
 }
