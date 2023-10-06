@@ -3,14 +3,39 @@ const DraftsModel = require('../models/DraftsModel');
 
 const getDrafts = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getDrafts(req));
+    
+}
+
+const inviteUser = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.inviteUser(req));
+}
+
+const readInvites = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.readInvites(req));
 }
 
 const getDraft = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getDraft(req));
 }
 
+const updateMember = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.updateMember(req));
+}
+
+const emailUpdateMember = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.emailUpdateMember(req));
+}
+
 const createDraft = async (req: Request, res: Response) => {
     res.json(await DraftsModel.createDraft(req));
+}
+
+const getInvites = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.getInvites(req));
+}
+
+const startDraft = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.startDraft(req));
 }
 
 const getAutodraftStatus = async (req: Request, res: Response) => {
@@ -46,5 +71,11 @@ module.exports = {
     pickPlayer,
     getPicks,
     getAutodraftStatus,
-    toggleAutodraft
+    toggleAutodraft,
+    inviteUser,
+    startDraft,
+    getInvites,
+    readInvites,
+    updateMember,
+    emailUpdateMember
 }

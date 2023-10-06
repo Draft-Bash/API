@@ -16,6 +16,13 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
                 Number(userId), Number(draftId)
             ]
         );
+        await db.query(
+            `UPDATE draft_user
+            SET is_autodraft_on=true
+            WHERE user_id=$1 AND draft_id=$2`, [
+                Number(userId), Number(draftId)
+            ]
+        );
         picks = userPicks.rows
     }
     else if (botNumber) {

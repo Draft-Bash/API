@@ -31,7 +31,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 
   const draftRoomTimers: DraftRoomTimers = {}; // Timers for each draft room
   const remainingTimes: RemainingTimes = {}; // Remaining time for each draft room
-  let isAutodraftOn = false;
+  const autodraftStates = new Map<string, boolean>(); // Autodraft states for each room
 
   async function startCountdown(roomId: string) {
     if (draftRoomTimers[roomId] !== undefined) {
@@ -43,48 +43,62 @@ export async function createWebSocket(httpServer: HttpServer) {
     let remainingTime = remainingTimes[roomId] ?? defaultPickTimeInSeconds;
     const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
     const userDraftTurn = currentDraftOrder[0];
+    let isUserOnAutodraft = false;
+
+    if (currentDraftOrder.length < 1) {
+      return;
+    }
+
+    try {
+      if (userDraftTurn.user_id) {
+        const userDraftData = await db.query(
+          `SELECT * FROM draft_user WHERE user_id=$1 AND draft_id=$2`,
+          [userDraftTurn.user_id, roomId]
+        );
+        isUserOnAutodraft = userDraftData.rows[0].is_autodraft_on;
+        io.in(roomId).emit('update-draft-turn', userDraftTurn.user_id);
+      }
+    } catch (error) {}
 
     if (currentDraftOrder.length > 0) {
-      io.in(roomId).emit('update-draft-turn', userDraftTurn.user_id);
-
       // Emit the current remaining time to all users in the room
       io.in(roomId).emit('update-clock', remainingTime);
 
       draftRoomTimers[roomId] = setInterval(async () => {
         if (currentDraftOrder[0].bot_number) {
-          await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
-          const newDraftOrder = await fetchCurrentDraftOrder(roomId);
-          const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
-          io.in(roomId).emit('send-draft-order', newDraftOrder);
-          io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
-          clearInterval(draftRoomTimers[roomId]);
-          remainingTimes[roomId] = defaultPickTimeInSeconds;
-          startCountdown(roomId);
+          try {
+            await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
+            const newDraftOrder = await fetchCurrentDraftOrder(roomId);
+            const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
+            io.in(roomId).emit('send-draft-order', newDraftOrder);
+            io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
+            clearInterval(draftRoomTimers[roomId]);
+            remainingTimes[roomId] = defaultPickTimeInSeconds;
+            io.in(roomId).emit('update-draft-turn', newDraftOrder[0].user_id);
+            startCountdown(roomId);
+          } catch (error) {}
         }
-        if (remainingTimes[roomId] <= 0 || isAutodraftOn) {
-          // Stop the timer when the remaining time reaches 0
+
+        if (remainingTimes[roomId] <= 0 || autodraftStates.get(roomId) || isUserOnAutodraft) {
           if (draftRoomTimers[roomId] !== undefined) {
+            autodraftStates.set(roomId, false);
             clearInterval(draftRoomTimers[roomId]);
             remainingTimes[roomId] = defaultPickTimeInSeconds; // Reset the timer to default time
-
             await autoDraft(userDraftTurn.user_id, null, roomId);
             const roster = await fetchRoster(roomId, userDraftTurn.user_id);
-
-            isAutodraftOn = true;
-            io.in(roomId).emit('autodraft-enabled', userDraftTurn.user_id);
+            io.in(roomId).emit('autodraft-enabled', userDraftTurn.user_id, roomId);
             io.in(roomId).emit('update-roster', { players: roster, userId: userDraftTurn.user_id });
-
             const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
             io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
-
             const newDraftOrder = await fetchCurrentDraftOrder(roomId);
             io.in(roomId).emit('send-draft-order', newDraftOrder);
-
+            try {
+              io.in(roomId).emit('update-draft-turn', newDraftOrder[0].user_id);
+            } catch (error) {}
             startCountdown(roomId); // Restart the countdown timer with default time
           }
         } else {
           remainingTimes[roomId] -= 1; // Decrement the remaining time by 1 second
-
           // Emit the updated remaining time to all users in the room
           io.in(roomId).emit('update-clock', remainingTimes[roomId]);
         }
@@ -113,9 +127,15 @@ export async function createWebSocket(httpServer: HttpServer) {
         in the draft every time it's updated. */
       const draftOrder = await fetchCurrentDraftOrder(roomId);
       io.in(roomId).emit('send-draft-order', draftOrder);
+      io.in(roomId);
 
-      // Start the countdown timer when a user joins the draft room
-      startCountdown(roomId);
+      if (draftSettings.is_started) {
+        startCountdown(roomId);
+      } else {
+        socket.on('start-draft', () => {
+          startCountdown(roomId);
+        });
+      }
 
       // Fetch and emit available players to the draft room
       const availablePlayers = await fetchAvailablePlayers(roomId);
@@ -123,10 +143,18 @@ export async function createWebSocket(httpServer: HttpServer) {
 
       // Emit the current remaining time to the newly joined user
       socket.emit('update-clock', remainingTimes[roomId]);
-    });
 
-    socket.on('update-autodraft', (isAuto: boolean) => {
-      isAutodraftOn = isAuto;
+      socket.on('update-autodraft', async (isAuto: boolean, userId: number, draftId: number) => {
+        if (draftId == Number(roomId)) {
+          autodraftStates.set(roomId, isAuto); // Update autodraft state for the current room only
+          await db.query(
+            `UPDATE draft_user
+              SET is_autodraft_on=$1
+              WHERE user_id=$2 AND draft_id=$3`,
+            [isAuto, userId, Number(roomId)]
+          );
+        }
+      });
     });
 
     socket.on(
@@ -150,7 +178,7 @@ export async function createWebSocket(httpServer: HttpServer) {
           remainingTimes[roomId] = defaultPickTimeInSeconds;
 
           // Start the countdown timer with the updated remaining time
-          startCountdown(roomId);
+          //startCountdown(roomId);
         } catch (error) {
           console.log(error);
         }
@@ -160,6 +188,8 @@ export async function createWebSocket(httpServer: HttpServer) {
         io.in(roomId).emit('receive-available-players', availablePlayers);
         const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
         io.in(roomId).emit('send-draft-order', currentDraftOrder);
+        io.in(roomId).emit('update-draft-turn', currentDraftOrder[0].user_id);
+        startCountdown(roomId);
       }
     );
   });

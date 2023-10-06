@@ -7,7 +7,6 @@ export interface DraftTurn {
 	draft_id: number;
 	bot_number: number;
 	pick_number: number;
-	is_picked: boolean;
 }
 
 // Define the DraftRoster interface or type
@@ -29,7 +28,6 @@ export interface DraftPick {
 	draft_id: number;
 	bot_number: number;
 	pick_number: number;
-	is_picked: boolean;
 	username: string;
 }
 
@@ -126,7 +124,7 @@ export function addPlayer(player: Player, rosterSpots: DraftRoster) {
 export async function fetchCurrentDraftOrder(roomId: string) {
 	const draftOrderData = await db.query(
 		`SELECT username, draft_order_id, U.user_id, 
-        draft_id, bot_number, pick_number, is_picked
+        draft_id, bot_number, pick_number
         FROM draft_order AS O
         LEFT JOIN user_account AS U ON O.user_id = U.user_id
         WHERE draft_id = $1
