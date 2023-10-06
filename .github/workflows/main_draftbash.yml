@@ -27,6 +27,7 @@ jobs:
           echo "DB_NAME=neondb" >> .env
           echo "SSL=true" >> .env
           echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" > .env
+          echo "CLIENT_URL=https://draftbashfantasy.com" >> .env
           echo "API_URL=https://draftbash.azurewebsites.net/api/v1" > .env
 
       - name: npm install, build, and test
