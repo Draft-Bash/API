@@ -12,7 +12,14 @@ module.exports = {
       password: process.env.DB_PASSWORD, // Your PostgreSQL password
       database: process.env.DB_NAME, // Your PostgreSQL database name
       port: process.env.DB_PORT,
-      ssl: JSON.parse(process.env.SSL)
+      ssl: (() => {
+        try {
+          return JSON.parse(process.env.SSL);
+        } catch (error) {
+          console.error('Error parsing SSL environment variable:', error);
+          return true; // Set SSL to false by default in case of parsing errors
+        }
+      })()
     },
     migrations: {
       directory: './migrations/schema', // Schema migrations directory
