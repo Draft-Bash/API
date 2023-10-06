@@ -197,7 +197,7 @@ class DraftsModel {
                 ),
                 user_id = NULL
                 FROM draft as D
-                WHERE DO1.user_id = $1 AND DO1.draft_id = $2 AND D.is_started = FALSE;`, [
+                WHERE DO1.user_id = $1 AND DO1.draft_id = $2 AND D.draft_id = $2 AND D.is_started = FALSE;`, [
                     userId, draftId
                 ]
             );

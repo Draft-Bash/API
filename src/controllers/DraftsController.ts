@@ -3,6 +3,7 @@ const DraftsModel = require('../models/DraftsModel');
 
 const getDrafts = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getDrafts(req));
+    
 }
 
 const inviteUser = async (req: Request, res: Response) => {
