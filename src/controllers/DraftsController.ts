@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
+import dotenv from 'dotenv';
 const DraftsModel = require('../models/DraftsModel');
+dotenv.config();
 
 const getDrafts = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getDrafts(req));
-    
 }
 
 const inviteUser = async (req: Request, res: Response) => {
@@ -23,7 +24,10 @@ const updateMember = async (req: Request, res: Response) => {
 }
 
 const emailUpdateMember = async (req: Request, res: Response) => {
-    res.json(await DraftsModel.emailUpdateMember(req));
+  const jsonData = await DraftsModel.emailUpdateMember(req);
+  res.status(302);
+  res.setHeader('Location', process.env.CLIENT_URL + '/modules/drafts');
+  res.json(jsonData);
 }
 
 const createDraft = async (req: Request, res: Response) => {
