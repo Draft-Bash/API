@@ -26,7 +26,7 @@ jobs:
           echo "DB_PORT=5432" >> .env
           echo "DB_NAME=neondb" >> .env
           echo "SSL=true" >> .env
-          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" > .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
           echo "CLIENT_URL=https://draftbashfantasy.com" >> .env
           echo "API_URL=https://draftbash.azurewebsites.net/api/v1" >> .env
 
