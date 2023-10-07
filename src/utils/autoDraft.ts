@@ -59,14 +59,13 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
         let n = 3;
         let isPlayerDrafted = false;
         while (!isPlayerDrafted) {
-    
             for (let i=0; i<n; i++) {
                 const randomIndex = Math.floor(Math.random() * n);
                 if (addPlayer(undraftedPlayers[randomIndex], rosterSpots)) {
                     isPlayerDrafted = true;
                     await db.query(
-                        `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
-                        VALUES ($1, $2, $3, $4)`,
+                        `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number, pick_number)
+                        VALUES ($1, $2, $3, $4, COALESCE((SELECT MAX(pick_number) + 1 FROM draft_pick WHERE draft_id = $2), 1))`,
                         [undraftedPlayers[randomIndex].player_id, draftId, userId, botNumber]
                     );
                     await db.query(
@@ -78,6 +77,9 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
                 }
             }
             n+=1;
+            if (n>100) {
+                break;
+            }
         }
     } catch (error) {}
 }

@@ -29,6 +29,9 @@ export interface DraftPick {
 	bot_number: number;
 	pick_number: number;
 	username: string;
+	first_name: string;
+	last_name: string;
+	team_abbreviation: string;
 }
 
 // Define the Player interface
@@ -121,6 +124,27 @@ export function addPlayer(player: Player, rosterSpots: DraftRoster) {
 	return false;
 }
 
+export async function fetchAllPicks(draftId: string) {
+	const picks = await db.query(
+		`SELECT U.username, D.player_id, D.draft_id, D.picked_by_bot_number, 
+		P.first_name, P.last_name, D.pick_number, T.team_abbreviation,
+		P.is_pointguard, P.is_shootingguard, P.is_smallforward, P.is_powerforward,
+		P.is_center
+		FROM draft_pick AS D
+		LEFT JOIN user_account AS U
+		ON D.picked_by_user_id = U.user_id
+		INNER JOIN nba_player AS P
+		ON D.player_id = P.player_id
+		LEFT JOIN nba_team AS T
+		ON P.team_id = T.team_id
+		WHERE D.draft_id = $1
+		ORDER BY D.pick_number DESC;
+		`,
+		[draftId]
+	);
+	return picks.rows;
+}
+
 export async function fetchCurrentDraftOrder(roomId: string) {
 	const draftOrderData = await db.query(
 		`SELECT username, draft_order_id, U.user_id, 
@@ -151,6 +175,8 @@ export async function fetchAvailablePlayers(roomId: string) {
     ON R.player_id = P.player_id
     INNER JOIN nba_player_season_totals AS T
     ON P.player_id = T.player_id
+	INNER JOIN nba_team AS NT
+	ON P.team_id = NT.team_id
     WHERE R.player_id NOT IN (
       SELECT player_id
       FROM draft_pick
