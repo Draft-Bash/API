@@ -88,9 +88,7 @@ class UsersModel {
             }
             // Returns false if the login was wrong.
             return false;
-        } catch (error) {
-            console.log(error)
-        }
+        } catch (error) {}
     }
 }
   
