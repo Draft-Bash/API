@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export async function sendJoinEmails(user_email: string) {
+export async function sendJoinEmails(user_email: string, username: string) {
   // Converting image to base64 to image can be embedded in the email
 
   const html_body = `
@@ -13,17 +13,6 @@ export async function sendJoinEmails(user_email: string) {
       <title>Mock Draft</title>
       <style type="text/css">
           /* Define your CSS styles here */
-          button {
-              border: none;
-              outline: none;
-              border-radius: 25px;
-              padding: 10px 25px 10px 25px;
-              cursor: pointer;
-              transition: 0.3s;
-              font-size: 18px;
-              color: white;
-              font-family: Verdana, Geneva, sans-serif;
-          }
           body {
               padding: 20px;
               background-color: rgb(40, 45, 70);
@@ -39,17 +28,22 @@ export async function sendJoinEmails(user_email: string) {
               justify-content: center;
               gap: 20px;
           }
+
+          .note {
+            text-align: center;
+            font-size: 10px;
+            font-family: Verdana, Geneva, sans-serif;
+          }
           .accept {background-color: rgb(75, 175, 250)}
       </style>
   </head>
-  <body>
+  <body padding="20px" background-color="rgb(40, 45, 70)" color="white">
       <h1>Thank you for joining Draft Bash Fantasy!</h1>
       <main>
-          <h3>This is an email confirming your registration. No further action is needed.</h3>
-          <br>
-          <a href="https://draftbashfantasy.com/">
-            <img src="images/basketball.png">
-          </a>
+      <h3>Username: ${username}</h3>
+          <p>This is an email confirming your registration. No further action is needed.</p>
+      <p class="note">This is an auto-generated email. Please do not respond.</p>
+      <p class="note">Draft Bash Fantasy</p>
       </main>
   </body>
   </html>
@@ -75,7 +69,7 @@ export async function sendJoinEmails(user_email: string) {
     const info = await transporter.sendMail({
       from: 'DraftBashFantasy <draftbashfantasy@gmail.com>',
       to: email,
-      subject: 'New logo',
+      subject: 'Thank You For Joining Draft Bash Fantasy!',
       html: html_body,
     });
 

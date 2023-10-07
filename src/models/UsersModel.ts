@@ -38,7 +38,7 @@ class UsersModel {
             ]);
 
             /*If the user account is successfully created, they will receive an email */
-            emails.sendJoinEmails(user.email)
+            emails.sendJoinEmails(user.email, user.username)
 
             /* Creates a json web token for when the user 
             is created so that the user is immediately logged in */
