@@ -13,6 +13,7 @@ const checkIfUserAuthenticated = async (req: Request, res: Response) => {
     res.json(await UsersModel.checkIfUserAuthenticated(req));
 }
 
+
 module.exports = {
     createUser,
     loginUser,

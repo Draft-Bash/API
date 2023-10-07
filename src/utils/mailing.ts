@@ -11,7 +11,7 @@ export async function sendInvitationEmails() {
   `;
 
   // array of emails
-  const emails: string[] = ['brianfeddes@gmail.com', 'stephenpfeddes@gmail.com'];
+  const emails: string[] = ['stephenpfeddes@gmail.com'];
 
   try {
     // where email is being sent from
@@ -40,10 +40,6 @@ export async function sendInvitationEmails() {
         },
       ],
     });
-
-    console.log("Message Sent, ID: " + info.messageId);
-    console.log(info.accepted); // array of accepted emails
-    console.log(info.rejected); // array of denied emails
   } catch (error) {
     console.log(error);
   }

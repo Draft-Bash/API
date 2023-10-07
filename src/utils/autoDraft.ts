@@ -18,7 +18,7 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
         );
         await db.query(
             `UPDATE draft_user
-            SET is_autopick_on=true
+            SET is_autodraft_on=true
             WHERE user_id=$1 AND draft_id=$2`, [
                 Number(userId), Number(draftId)
             ]
@@ -79,7 +79,5 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
             }
             n+=1;
         }
-    } catch (error) {
-        console.log(error)
-    }
+    } catch (error) {}
 }
