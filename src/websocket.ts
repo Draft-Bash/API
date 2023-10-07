@@ -41,10 +41,6 @@ export async function createWebSocket(httpServer: HttpServer) {
     const userDraftTurn = currentDraftOrder[0];
     let isUserOnAutodraft = false;
 
-    if (currentDraftOrder.length < 1) {
-      return;
-    }
-
     try {
       if (userDraftTurn.user_id) {
         const userDraftData = await db.query(
@@ -55,6 +51,13 @@ export async function createWebSocket(httpServer: HttpServer) {
         io.in(roomId).emit('update-draft-turn', userDraftTurn.user_id);
       }
     } catch (error) {}
+
+    if (currentDraftOrder.length <= 1) {
+      await db.query(
+        `DELETE FROM draft_user WHERE draft_id = $1`,
+        [roomId]
+      );
+    }
 
     if (currentDraftOrder.length > 0) {
       // Emit the current remaining time to all users in the room
@@ -104,7 +107,6 @@ export async function createWebSocket(httpServer: HttpServer) {
         }
       }, 1000); // Update every second
     } else {
-      console.log("Draft is over");
       return;
     }
   }
@@ -135,6 +137,7 @@ export async function createWebSocket(httpServer: HttpServer) {
       } else {
         socket.on('start-draft', () => {
           startCountdown(roomId);
+          io.in(roomId).emit('show-start');
         });
       }
 
