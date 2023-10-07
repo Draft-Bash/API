@@ -1,11 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { createServer, Server as HttpServer } from 'http';
-import { DraftTurn, fetchRoster } from './utils/draft';
-import {
-  fetchAvailablePlayers,
-  fetchCurrentDraftOrder,
-  fetchDraftSettings,
-} from './utils/draft';
+import { DraftTurn, fetchRoster, fetchAvailablePlayers, 
+  fetchCurrentDraftOrder, fetchDraftSettings, fetchAllPicks} from './utils/draft';
 import { autoDraft } from './utils/autoDraft';
 import { Pool, QueryResult } from 'pg';
 const db = require('./db');
@@ -45,10 +41,6 @@ export async function createWebSocket(httpServer: HttpServer) {
     const userDraftTurn = currentDraftOrder[0];
     let isUserOnAutodraft = false;
 
-    if (currentDraftOrder.length < 1) {
-      return;
-    }
-
     try {
       if (userDraftTurn.user_id) {
         const userDraftData = await db.query(
@@ -60,6 +52,13 @@ export async function createWebSocket(httpServer: HttpServer) {
       }
     } catch (error) {}
 
+    if (currentDraftOrder.length <= 1) {
+      await db.query(
+        `DELETE FROM draft_user WHERE draft_id = $1`,
+        [roomId]
+      );
+    }
+
     if (currentDraftOrder.length > 0) {
       // Emit the current remaining time to all users in the room
       io.in(roomId).emit('update-clock', remainingTime);
@@ -70,8 +69,10 @@ export async function createWebSocket(httpServer: HttpServer) {
             await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
             const newDraftOrder = await fetchCurrentDraftOrder(roomId);
             const currentAvailablePlayers = await fetchAvailablePlayers(roomId);
+            const allPicks = await fetchAllPicks(roomId);
             io.in(roomId).emit('send-draft-order', newDraftOrder);
             io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
+            io.in(roomId).emit('update-total-draftpicks', allPicks);
             clearInterval(draftRoomTimers[roomId]);
             remainingTimes[roomId] = defaultPickTimeInSeconds;
             io.in(roomId).emit('update-draft-turn', newDraftOrder[0].user_id);
@@ -92,6 +93,8 @@ export async function createWebSocket(httpServer: HttpServer) {
             io.in(roomId).emit('receive-available-players', currentAvailablePlayers);
             const newDraftOrder = await fetchCurrentDraftOrder(roomId);
             io.in(roomId).emit('send-draft-order', newDraftOrder);
+            const allPicks = await fetchAllPicks(roomId);
+            io.in(roomId).emit('update-total-draftpicks', allPicks);
             try {
               io.in(roomId).emit('update-draft-turn', newDraftOrder[0].user_id);
             } catch (error) {}
@@ -104,7 +107,6 @@ export async function createWebSocket(httpServer: HttpServer) {
         }
       }, 1000); // Update every second
     } else {
-      console.log('The draft is over.');
       return;
     }
   }
@@ -127,13 +129,15 @@ export async function createWebSocket(httpServer: HttpServer) {
         in the draft every time it's updated. */
       const draftOrder = await fetchCurrentDraftOrder(roomId);
       io.in(roomId).emit('send-draft-order', draftOrder);
-      io.in(roomId);
+      const allPicks = await fetchAllPicks(roomId);
+      io.in(roomId).emit('update-total-draftpicks', allPicks);
 
       if (draftSettings.is_started) {
         startCountdown(roomId);
       } else {
         socket.on('start-draft', () => {
           startCountdown(roomId);
+          io.in(roomId).emit('show-start');
         });
       }
 
@@ -162,8 +166,8 @@ export async function createWebSocket(httpServer: HttpServer) {
       async (playerId: string, userId: string, roomId: string) => {
         try {
           await db.query(
-            `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number)
-          VALUES ($1, $2, $3, $4)`,
+            `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number, pick_number)
+          VALUES ($1, $2, $3, $4, COALESCE((SELECT MAX(pick_number) + 1 FROM draft_pick WHERE draft_id = $2), 1))`,
             [playerId, roomId, userId, null]
           );
           await db.query(
@@ -176,9 +180,6 @@ export async function createWebSocket(httpServer: HttpServer) {
           const draftSettings = await fetchDraftSettings(roomId);
           const defaultPickTimeInSeconds = draftSettings.pick_time_seconds;
           remainingTimes[roomId] = defaultPickTimeInSeconds;
-
-          // Start the countdown timer with the updated remaining time
-          //startCountdown(roomId);
         } catch (error) {
           console.log(error);
         }
@@ -189,6 +190,8 @@ export async function createWebSocket(httpServer: HttpServer) {
         const currentDraftOrder = await fetchCurrentDraftOrder(roomId);
         io.in(roomId).emit('send-draft-order', currentDraftOrder);
         io.in(roomId).emit('update-draft-turn', currentDraftOrder[0].user_id);
+        const allPicks = await fetchAllPicks(roomId);
+        io.in(roomId).emit('update-total-draftpicks', allPicks);
         startCountdown(roomId);
       }
     );

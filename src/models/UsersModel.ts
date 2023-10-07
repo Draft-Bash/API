@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const emails = require('../utils/joinEmail')
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -36,12 +37,16 @@ class UsersModel {
                 user.username, user.email, bcryptPassword
             ]);
 
+            /*If the user account is successfully created, they will receive an email */
+            emails.sendJoinEmails(user.email, user.username)
+
             /* Creates a json web token for when the user 
             is created so that the user is immediately logged in */
             const token = jwt.sign(userData.rows[0], process.env.JWT_SECRET, {expiresIn: "2hr"});
 
             /* Returns json back so that the frontend can access the jwt token
             and see that the username and email is unique */
+
             return {uniqueColumns: uniqueColumns, jwtToken: token};
         }
         /* Returns a null jwt token and a uniqueColumns object so 
@@ -83,9 +88,7 @@ class UsersModel {
             }
             // Returns false if the login was wrong.
             return false;
-        } catch (error) {
-            console.log(error)
-        }
+        } catch (error) {}
     }
 }
   
