@@ -7,9 +7,52 @@ export async function sendJoinEmails(user_email: string) {
   // Converting image to base64 to image can be embedded in the email
 
   const html_body = `
-    <h1>Thank you for joining DraftBash Fantasy!</h1>
-    <h3>Draft Date & Time:</h3>
-    <p>This is a test</p>
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <title>Mock Draft</title>
+      <style type="text/css">
+          /* Define your CSS styles here */
+          button {
+              border: none;
+              outline: none;
+              border-radius: 25px;
+              padding: 10px 25px 10px 25px;
+              cursor: pointer;
+              transition: 0.3s;
+              font-size: 18px;
+              color: white;
+              font-family: Verdana, Geneva, sans-serif;
+          }
+          body {
+              padding: 20px;
+              background-color: rgb(40, 45, 70);
+              color: white;
+          }
+          button:hover {box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3)}
+          h1 {
+              text-align: center;
+              font-family: Verdana, Geneva, sans-serif;
+          }
+          main {
+              display: flex;
+              justify-content: center;
+              gap: 20px;
+          }
+          .accept {background-color: rgb(75, 175, 250)}
+      </style>
+  </head>
+  <body>
+      <h1>Thank you for joining Draft Bash Fantasy!</h1>
+      <main>
+          <h3>This is an email confirming your registration. No further action is needed.</h3>
+          <br>
+          <a href="https://draftbashfantasy.com/">
+            <img src="images/basketball.png">
+          </a>
+      </main>
+  </body>
+  </html>
   `;
 
   // array of emails
