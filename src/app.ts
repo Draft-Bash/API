@@ -11,6 +11,11 @@ app.get('/', (req, res) => {
   res.send('Hello, TypeScript Express!');
 });
 
+app.get('/ping', (req, res) => {
+  console.log("Responding to ping");
+  res.json({ message: 'Server is awake!' });
+});
+
 // Route containing endpoints related to users
 app.use("/api/v1/users", require("./routes/users"));
 // Route containing endpoints related to drafts
