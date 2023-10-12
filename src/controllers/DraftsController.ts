@@ -7,6 +7,10 @@ const getDrafts = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getDrafts(req));
 }
 
+const deleteDraft = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.deleteDraft(req));
+}
+
 const inviteUser = async (req: Request, res: Response) => {
     res.json(await DraftsModel.inviteUser(req));
 }
@@ -81,5 +85,6 @@ module.exports = {
     getInvites,
     readInvites,
     updateMember,
-    emailUpdateMember
+    emailUpdateMember,
+    deleteDraft
 }

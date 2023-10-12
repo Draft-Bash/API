@@ -4,6 +4,7 @@ const DraftsController = require("../controllers/DraftsController");
 draftsRouter.route("/")
     .get(DraftsController.getDrafts)
     .post(DraftsController.createDraft)
+    .delete(DraftsController.deleteDraft)
 
 draftsRouter.route("/invites")
     .get(DraftsController.getInvites)
