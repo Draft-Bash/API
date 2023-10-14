@@ -25,7 +25,7 @@ class UsersModel {
         const duplicateEmails = await db.query(
             `SELECT * 
             FROM user_account 
-            WHERE email = $1 AND is_google_auth == TRUE `, [
+            WHERE email = $1 AND is_google_auth = TRUE `, [
             user.email
         ])
         uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;
@@ -34,7 +34,7 @@ class UsersModel {
         // Inserts the user into the database.
         if (uniqueColumns.isUsernameUnique && uniqueColumns.isEmailUnique) {
             await db.query(
-                `DELETE FROM user_account WHERE email = $1`, [
+                `DELETE FROM user_account WHERE email = $1 AND is_google_auth = TRUE`, [
                 user.email
             ]);
             const userData = await db.query(
@@ -82,7 +82,7 @@ class UsersModel {
             const user = await db.query(`
                 SELECT * 
                 FROM user_account 
-                WHERE username = $1 OR email = $2 AND is_google_auth == FALSE;`, [
+                WHERE username = $1 OR email = $2 AND is_google_auth = FALSE;`, [
                 username, email
             ]);
 
