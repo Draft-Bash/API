@@ -17,6 +17,10 @@ app.use(cors()); // Configures the cross site resource sharing policy
 app.use(express.json())
 app.use(passport.initialize())
 
+app.get('/test', (req, res) => {
+  res.send(process.env.GOOGLE_CLIENT_ID+" "+process.env.GOOGLE_CLIENT_SECRET+" "+process.env.GOOGLE_CALLBACK_URL);
+});
+
 passport.use(
   new GoogleStrategy(
     {
