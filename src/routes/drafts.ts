@@ -5,6 +5,7 @@ draftsRouter.route("/")
     .get(DraftsController.getDrafts)
     .post(DraftsController.createDraft)
     .delete(DraftsController.deleteDraft)
+    .put(DraftsController.updateDraft)
 
 draftsRouter.route("/invites")
     .get(DraftsController.getInvites)
