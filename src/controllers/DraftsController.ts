@@ -38,6 +38,10 @@ const createDraft = async (req: Request, res: Response) => {
     res.json(await DraftsModel.createDraft(req));
 }
 
+const updateDraft = async (req: Request, res: Response) => {
+    res.json(await DraftsModel.updateDraft(req));
+}
+
 const getInvites = async (req: Request, res: Response) => {
     res.json(await DraftsModel.getInvites(req));
 }
@@ -86,5 +90,6 @@ module.exports = {
     readInvites,
     updateMember,
     emailUpdateMember,
-    deleteDraft
+    deleteDraft,
+    updateDraft
 }
