@@ -3,6 +3,7 @@ import { createWebSocket } from './websocket';
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || '3000';
+const db = require("./db");
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import jwt from 'jsonwebtoken';
@@ -16,10 +17,6 @@ app.use(cors()); // Configures the cross site resource sharing policy
 app.use(express.json())
 app.use(passport.initialize())
 
-console.log(process.env.GOOGLE_CLIENT_ID)
-console.log(process.env.GOOGLE_CLIENT_SECRET)
-console.log(process.env.JWT_SECRET)
-
 passport.use(
   new GoogleStrategy(
     {
@@ -27,17 +24,32 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     },
-    (accessToken, refreshToken, profile, done) => {
-      // You can customize this function to store user data in your database
-      // For simplicity, we'll just generate a JWT with the user's Google ID as the payload.
-      const user = { 
-        id: profile.id,
-        };
+    async (accessToken, refreshToken, profile, done) => {
       if (profile.emails) {
-        console.log(profile.emails[0].value)
+        const userEmail = profile.emails[0].value
+        const user = await db.query(`
+          SELECT * 
+          FROM user_account 
+          WHERE email = $1;`, [
+          userEmail
+        ]);
+        if (user.rows.length > 0) {
+          const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
+          return done(null, token);
+        }
+        else {
+          const username = userEmail.split('@')[0];
+          const user = await db.query(`
+            INSERT INTO user_account (username, email, password, is_google_auth)
+            VALUES ($1, $2, $3, $4)
+            RETURNING user_id, username`, [
+            username, userEmail, "google-auth", true
+          ]);
+          const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
+          return done(null, token);
+        }
       }
-      const token = jwt.sign(user, process.env.JWT_SECRET!, { expiresIn: '1h' });
-      return done(null, token);
+      return done(null);
     }
   )
 );
@@ -49,9 +61,12 @@ app.get(
   '/auth/google/callback',
   passport.authenticate('google', { session: false }),
   (req, res) => {
-    // The user is authenticated, and we have a JWT token.
-    // You can redirect the user to another page or send the token as a response.
-    res.json({ 'hello':'hi'});
+    if (req.user) {
+      const token = req.user;
+      if (process.env.CLIENT_URL) {
+        res.redirect(`${process.env.CLIENT_URL}/google-auth?token=${token}`);
+      }
+    } 
   }
 );
 

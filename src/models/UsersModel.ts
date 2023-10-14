@@ -22,7 +22,10 @@ class UsersModel {
         const duplicateUsernames = await db.query("SELECT * FROM user_account WHERE username = $1", [
             user.username
         ]);
-        const duplicateEmails = await db.query("SELECT * FROM user_account WHERE email = $1", [
+        const duplicateEmails = await db.query(
+            `SELECT * 
+            FROM user_account 
+            WHERE email = $1 AND is_google_auth == TRUE `, [
             user.email
         ])
         uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;
@@ -30,6 +33,10 @@ class UsersModel {
 
         // Inserts the user into the database.
         if (uniqueColumns.isUsernameUnique && uniqueColumns.isEmailUnique) {
+            await db.query(
+                `DELETE FROM user_account WHERE email = $1`, [
+                user.email
+            ]);
             const userData = await db.query(
                 `INSERT INTO user_account (username, email, password) 
                 VALUES ($1, $2, $3)
@@ -72,7 +79,10 @@ class UsersModel {
     public async loginUser(req: Request) {
         try {
             const { username, email, password} = req.body;
-            const user = await db.query("SELECT * FROM user_account WHERE username = $1 OR email = $2;", [
+            const user = await db.query(`
+                SELECT * 
+                FROM user_account 
+                WHERE username = $1 OR email = $2 AND is_google_auth == FALSE;`, [
                 username, email
             ]);
 
