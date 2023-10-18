@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const emails = require('../utils/joinEmail')
 import dotenv from 'dotenv';
+import { sendResetPasswordEmail } from '../utils/sendResetPasswordEmail';
 dotenv.config();
 
 
@@ -90,6 +91,62 @@ class UsersModel {
             return false;
         } catch (error) {}
     }
+       // Change a user's password
+       public async changePassword(req: Request) {
+        const { user_id, currentPassword, newPassword } = req.body;
+
+        try {
+            // Check if the user's JWT token is verified
+            const jwtToken = req.header("token");
+            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, { expiresIn: "2hr" });
+
+            if (user && user.user_id === user_id) {
+                // Retrieve the current user's information from the database
+                const client = await db.connect();
+                const result = await client.query("SELECT * FROM user_account WHERE user_id = $1;", [user_id]);
+                const userData = result.rows[0];
+                client.release();
+
+                if (!userData) {
+                    return false; // User not found
+                }
+
+                // Check if the current password matches the stored password
+                const validPassword = bcrypt.compareSync(currentPassword, userData.password);
+
+                if (validPassword) {
+                    // Encrypt the new password
+                    const saltRounds = 10;
+                    const salt = bcrypt.genSaltSync(saltRounds);
+                    const bcryptPassword = bcrypt.hashSync(newPassword, salt);
+
+                    // Update the user's password in the database
+                    const updatedUserData = await db.query(
+                        "UPDATE user_account SET password = $1 WHERE user_id = $2 RETURNING user_id;",
+                        [bcryptPassword, user_id]
+                    );
+
+                    if (updatedUserData.rows.length > 0) {
+                        return true; // Password changed successfully
+                    }
+                }
+            }
+
+            return false; // Password change failed
+        } catch (error) {
+            return false; // Error occurred during password change
+        }
+    }
+
+    public async sendResetPasswordEmail(req: Request) {
+        try {
+            const email = req.body.email;
+            const user = await db.query(`SELECT user_id FROM user_account WHERE email = $1 LIMIT 1;`, [email]);
+            sendResetPasswordEmail(req.body.email, user.rows[0].user_id);
+            return 200
+        } catch (error) {return 500}
+    }
+
 }
   
 module.exports = new UsersModel();
