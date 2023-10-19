@@ -124,6 +124,18 @@ export function addPlayer(player: Player, rosterSpots: DraftRoster) {
 	return false;
 }
 
+export async function fetchDraftQueue(draftId: string) {
+	const picks = await db.query(
+		`SELECT * FROM pick_queue AS Q
+		INNER JOIN nba_player AS P
+		ON Q.player_id = P.player_id
+		WHERE draft_id = $1
+		ORDER BY RANK`,
+		[draftId]
+	);
+	return picks.rows;
+}
+
 export async function fetchAllPicks(draftId: string) {
 	const picks = await db.query(
 		`SELECT U.username, D.player_id, D.draft_id, D.picked_by_bot_number, 
@@ -198,4 +210,95 @@ export async function fetchRoster(roomId: string, userId: string) {
 		[userId, roomId]
 	);
 	return roster.rows;
+}
+
+export async function dequeuePick(draftId: string, userId: number) {
+    const userPicks = await db.query(
+        `SELECT *
+        FROM draft_pick AS D
+        INNER JOIN nba_player AS P
+        ON D.player_id = P.player_id
+        WHERE D.picked_by_user_id = $1 AND D.draft_id = $2`,
+        [Number(userId), Number(draftId)]
+    );
+
+    const draftRules = await fetchDraftSettings(draftId);
+    const rosterSpots = {
+        pointguard: Array.from({ length: draftRules.pointguard_slots }, () => null),
+        shootingguard: Array.from({ length: draftRules.shootingguard_slots }, () => null),
+        guard: Array.from({ length: draftRules.guard_slots }, () => null),
+        smallforward: Array.from({ length: draftRules.smallforward_slots }, () => null),
+        powerforward: Array.from({ length: draftRules.powerforward_slots }, () => null),
+        forward: Array.from({ length: draftRules.forward_slots }, () => null),
+        center: Array.from({ length: draftRules.center_slots }, () => null),
+        utility: Array.from({ length: draftRules.utility_slots }, () => null),
+        bench: Array.from({ length: draftRules.bench_slots }, () => null)
+    };
+
+    userPicks.rows.forEach((player: Player) => {
+        addPlayer(player, rosterSpots);
+    });
+
+    try {
+        const queuedPlayers = await db.query(
+            `SELECT * 
+            FROM pick_queue AS Q
+            INNER JOIN nba_player AS P
+            ON Q.player_id = P.player_id
+            WHERE Q.draft_id = $1 AND Q.user_id = $2
+            ORDER BY rank;`,
+            [draftId, userId]
+        );
+
+        for (let i = 0; i < queuedPlayers.rows.length; i++) {
+            let tempRoster = JSON.parse(JSON.stringify(rosterSpots));
+            const player = queuedPlayers.rows[i];
+
+            if (addPlayer(player, tempRoster)) {
+                await db.query(
+                    `INSERT INTO draft_pick (player_id, draft_id, picked_by_user_id, picked_by_bot_number, pick_number)
+                    VALUES ($1, $2, $3, $4, COALESCE((SELECT MAX(pick_number) + 1 FROM draft_pick WHERE draft_id = $2), 1))`,
+                    [player.player_id, draftId, userId, null]
+                );
+
+                await db.query(
+                    `DELETE FROM pick_queue
+                    WHERE player_id = $1 AND draft_id = $2;`,
+                    [player.player_id, draftId]
+                );
+
+                await db.query(
+                    `DELETE FROM draft_order 
+                    WHERE draft_order_id = (SELECT MIN(draft_order_id) FROM draft_order WHERE draft_id = $1)`,
+                    [draftId]
+                );
+				if (queuedPlayers.rows.length > 1 && !addPlayer(queuedPlayers.rows[i + 1], tempRoster)) {
+					for (let j = 0; j < queuedPlayers.rows.length; j++) {
+						const player = queuedPlayers.rows[j];
+						const newTempRoster = JSON.parse(JSON.stringify(tempRoster));
+						if (!addPlayer(player, newTempRoster)) {
+							await db.query(
+								`DELETE FROM pick_queue
+								WHERE player_id = $1 AND draft_id = $2;`,
+								[player.player_id, draftId]
+							);
+						}
+					}
+				}
+				
+                return true;
+            } else {
+                await db.query(
+                    `DELETE FROM pick_queue
+                    WHERE player_id = $1 AND draft_id = $2;`,
+                    [player.player_id, draftId]
+                );
+            }
+        }
+
+        return false;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
 }
