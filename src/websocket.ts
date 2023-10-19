@@ -76,6 +76,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 			io.in(roomId).emit("update-clock", remainingTime);
 
 			draftRoomTimers[roomId] = setInterval(async () => {
+        let isPickQueued = false;
 				if (currentDraftOrder[0].bot_number) {
 					try {
 						await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
@@ -119,6 +120,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 						} catch (error) {}
 						clearInterval(draftRoomTimers[roomId]);
 						remainingTimes[roomId] = defaultPickTimeInSeconds; // Reset the timer to default time
+            isPickQueued = true;
 						startCountdown(roomId); // Restart the countdown timer with default time
 					}
 				}
@@ -129,7 +131,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 						isUserOnAutodraft ||
 						(autodraftStates.get(roomId)?.isAuto &&
 							autodraftStates.get(roomId)?.userId == userDraftTurn.user_id)) &&
-					userPickQueue.length <= 1
+              !isPickQueued
 				) {
 					if (draftRoomTimers[roomId] !== undefined) {
 						autodraftStates.set(roomId, {
