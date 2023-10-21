@@ -21,6 +21,11 @@ app.get('/test', (req, res) => {
   res.send(process.env.GOOGLE_CLIENT_ID+" "+process.env.GOOGLE_CLIENT_SECRET+" "+process.env.GOOGLE_CALLBACK_URL);
 });
 
+try {
+  
+} catch (error) {
+  
+}
 passport.use(
   new GoogleStrategy(
     {
@@ -29,31 +34,35 @@ passport.use(
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     },
     async (accessToken, refreshToken, profile, done) => {
-      if (profile.emails) {
-        const userEmail = profile.emails[0].value
-        const user = await db.query(`
-          SELECT * 
-          FROM user_account 
-          WHERE email = $1;`, [
-          userEmail
-        ]);
-        if (user.rows.length > 0) {
-          const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
-          return done(null, token);
-        }
-        else {
-          const username = userEmail.split('@')[0];
+      try {
+        if (profile.emails) {
+          const userEmail = profile.emails[0].value
           const user = await db.query(`
-            INSERT INTO user_account (username, email, password, is_google_auth)
-            VALUES ($1, $2, $3, $4)
-            RETURNING user_id, username`, [
-            username, userEmail, "google-auth", true
+            SELECT * 
+            FROM user_account 
+            WHERE email = $1;`, [
+            userEmail
           ]);
-          const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
-          return done(null, token);
+          if (user.rows.length > 0) {
+            const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
+            return done(null, token);
+          }
+          else {
+            const username = userEmail.split('@')[0];
+            const user = await db.query(`
+              INSERT INTO user_account (username, email, password, is_google_auth)
+              VALUES ($1, $2, $3, $4)
+              RETURNING user_id, username`, [
+              username, userEmail, "google-auth", true
+            ]);
+            const token = jwt.sign(user.rows[0], process.env.JWT_SECRET!, { expiresIn: '2h' });
+            return done(null, token);
+          }
         }
+        return done(null);
+      } catch (error) {
+        console.log(error);
       }
-      return done(null);
     }
   )
 );
@@ -65,12 +74,16 @@ app.get(
   '/auth/google/callback',
   passport.authenticate('google', { session: false }),
   (req, res) => {
-    if (req.user) {
-      const token = req.user;
-      if (process.env.CLIENT_URL) {
-        res.redirect(`${process.env.CLIENT_URL}/google-auth?token=${token}`);
-      }
-    } 
+    try {
+      if (req.user) {
+        const token = req.user;
+        if (process.env.CLIENT_URL) {
+          res.redirect(`${process.env.CLIENT_URL}/google-auth?token=${token}`);
+        }
+      } 
+    } catch (error) {
+      console.log(error);
+    }
   }
 );
 
