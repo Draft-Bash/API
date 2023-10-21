@@ -3,6 +3,7 @@ const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const emails = require('../utils/joinEmail')
+import { sendPasswordResetEmail } from '../utils/sendPasswordResetEmail';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -99,6 +100,38 @@ class UsersModel {
             // Returns false if the login was wrong.
             return false;
         } catch (error) {}
+    }
+
+    public async sendResetPasswordEmail(req: Request) {
+        const email = req.body.email;
+        const user = await db.query(`
+            SELECT * 
+            FROM user_account 
+            WHERE email = $1 AND is_google_auth = FALSE
+            LIMIT 1;`, [email]);
+    
+        if (user) {
+            sendPasswordResetEmail(user.rows[0].user_id, user.rows[0].email, user.rows[0].username);
+            return 200;
+        }
+        else {
+            return 400;
+        }
+    }
+
+    public async updateUser(req: Request) {
+        const password = req.body.password;
+        const userId = req.body.userId;
+
+        const saltRounds = 10;
+        const salt = bcrypt.genSaltSync(saltRounds);
+        const bcryptPassword = bcrypt.hashSync(password, salt);
+
+        await db.query(`
+            UPDATE user_account SET password = $1 WHERE user_id = $2;`, 
+        [bcryptPassword, userId]);
+
+        return 200
     }
 }
   
