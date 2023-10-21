@@ -169,11 +169,11 @@ export async function createWebSocket(httpServer: HttpServer) {
 			}, 1000); // Update every second
 		} else {
 			try {
-				//await db.query(`DELETE FROM draft_user WHERE draft_id = $1`, [roomId]);
-				//await db.query(`DELETE FROM draft_pick WHERE draft_id = $1`, [roomId]);
-				//await db.query(`DELETE FROM draft_order WHERE draft_id = $1`, [roomId]);
-				//await db.query(`DELETE FROM pick_queue WHERE draft_id = $1`, [roomId]);
-				//await db.query(`DELETE FROM draft WHERE draft_id = $1`, [roomId]);
+				await db.query(`DELETE FROM draft_user WHERE draft_id = $1`, [roomId]);
+				await db.query(`DELETE FROM draft_pick WHERE draft_id = $1`, [roomId]);
+				await db.query(`DELETE FROM draft_order WHERE draft_id = $1`, [roomId]);
+				await db.query(`DELETE FROM pick_queue WHERE draft_id = $1`, [roomId]);
+				await db.query(`DELETE FROM draft WHERE draft_id = $1`, [roomId]);
 			} catch (error) {console.log(error)}
 			return;
 		}
