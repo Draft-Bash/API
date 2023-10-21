@@ -13,7 +13,8 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
                 FROM draft_pick AS D
                 INNER JOIN nba_player AS P
                 ON D.player_id = P.player_id
-                WHERE D.picked_by_user_id = $1 AND D.draft_id = $2`, [
+                WHERE D.picked_by_user_id = $1 AND D.draft_id = $2
+                ORDER BY pick_number`, [
                     Number(userId), Number(draftId)
                 ]
             );
@@ -32,7 +33,8 @@ export async function autoDraft(userId: number | null, botNumber: number | null,
                 FROM draft_pick AS D
                 INNER JOIN nba_player AS P
                 ON D.player_id = P.player_id
-                WHERE D.picked_by_bot_number = $1 AND D.draft_id = $2`, [
+                WHERE D.picked_by_bot_number = $1 AND D.draft_id = $2
+                ORDER BY pick_number`, [
                     Number(botNumber), Number(draftId)
                 ]
             );

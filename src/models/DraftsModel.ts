@@ -417,7 +417,7 @@ class DraftsModel {
         });
 
         let recipients = await db.query(`
-            SELECT user_id AS "userId", email FROM user_account
+            SELECT user_id AS "userId", username, email FROM user_account
             WHERE user_id = ANY($1)
             `, [recipientIds]);
 

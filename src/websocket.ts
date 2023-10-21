@@ -67,16 +67,12 @@ export async function createWebSocket(httpServer: HttpServer) {
 			}
 		} catch (error) {}
 
-		if (currentDraftOrder.length <= 1) {
-			await db.query(`DELETE FROM draft_user WHERE draft_id = $1`, [roomId]);
-		}
-
 		if (currentDraftOrder.length > 0) {
 			// Emit the current remaining time to all users in the room
 			io.in(roomId).emit("update-clock", remainingTime);
 
 			draftRoomTimers[roomId] = setInterval(async () => {
-        let isPickQueued = false;
+        		let isPickQueued = false;
 				if (currentDraftOrder[0].bot_number) {
 					try {
 						await autoDraft(null, currentDraftOrder[0].bot_number, roomId);
@@ -94,7 +90,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 						io.in(roomId).emit("update-draft-turn", newDraftOrder[0].user_id);
 						startCountdown(roomId);
 					} catch (error) {
-						console.log(error);
+						startCountdown(roomId);
 					}
 				}
 
@@ -120,7 +116,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 						} catch (error) {}
 						clearInterval(draftRoomTimers[roomId]);
 						remainingTimes[roomId] = defaultPickTimeInSeconds; // Reset the timer to default time
-            isPickQueued = true;
+            			isPickQueued = true;
 						startCountdown(roomId); // Restart the countdown timer with default time
 					}
 				}
@@ -172,6 +168,13 @@ export async function createWebSocket(httpServer: HttpServer) {
 				}
 			}, 1000); // Update every second
 		} else {
+			try {
+				//await db.query(`DELETE FROM draft_user WHERE draft_id = $1`, [roomId]);
+				//await db.query(`DELETE FROM draft_pick WHERE draft_id = $1`, [roomId]);
+				//await db.query(`DELETE FROM draft_order WHERE draft_id = $1`, [roomId]);
+				//await db.query(`DELETE FROM pick_queue WHERE draft_id = $1`, [roomId]);
+				//await db.query(`DELETE FROM draft WHERE draft_id = $1`, [roomId]);
+			} catch (error) {console.log(error)}
 			return;
 		}
 	}

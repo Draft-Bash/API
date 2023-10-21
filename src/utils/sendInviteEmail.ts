@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 export interface Recipient {
 	email: string;
 	userId: number;
+    username: string;
     draftId: number;
 }
 dotenv.config();
