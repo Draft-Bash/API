@@ -2,8 +2,17 @@ const Pool = require("pg").Pool;
 import dotenv from 'dotenv';
 dotenv.config();
 
+interface Database {
+    user: string;
+    password: string;
+    host: string;
+    port: number;
+    database: number;
+    ssl?: boolean;
+}
+
 // Creates the Postgres database connection so that queries can be made to the database.
-const dbConn = new Pool({
+const dbConn: Database = new Pool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
