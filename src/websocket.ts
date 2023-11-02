@@ -154,12 +154,9 @@ export async function createWebSocket(httpServer: HttpServer) {
 				}, 1000); // Update every second
 			} else {
 				try {
-					// Deletes the draft after it finishes.
-					await db.query(`DELETE FROM draft_user WHERE draft_id = $1`, [roomId]);
-					await db.query(`DELETE FROM draft_pick WHERE draft_id = $1`, [roomId]);
-					await db.query(`DELETE FROM draft_order WHERE draft_id = $1`, [roomId]);
-					await db.query(`DELETE FROM pick_queue WHERE draft_id = $1`, [roomId]);
-					await db.query(`DELETE FROM draft WHERE draft_id = $1`, [roomId]);
+					// Prevents users from accessing the draft again from the mock draft page.
+					await db.query(`UPDATE draft_user SET is_invite_accepted = FALSE 
+					WHERE draft_id = $1`, [roomId]);
 				} catch (error) {console.log(error)}
 				return;
 			}

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { genLinearDraftOrder } from '../utils/genDraftOrder';
 import { genSnakeDraftOrder } from '../utils/genDraftOrder';
 import { Recipient, sendEmailInvites } from '../utils/sendInviteEmail';
+import { deleteDraft } from './draftsModel/deleteDraft';
 const jwt = require('jsonwebtoken');
 import dotenv from 'dotenv';
 dotenv.config();
@@ -11,24 +12,7 @@ class DraftsModel {
 
     public async deleteDraft(req: Request) {
         const {draftId} = req.query;
-        const isDraftStarted = await db.query(`
-            SELECT is_started FROM draft WHERE draft_id = $1 AND is_started = TRUE;`, [
-            draftId
-        ]);
-        if (isDraftStarted.rows.length>0) {
-            return false
-        }
-        else {
-            await db.query(`
-                DELETE FROM draft_user WHERE draft_id = $1;`, [
-                draftId
-            ]);
-            await db.query(`
-                DELETE FROM draft WHERE draft_id = $1;`, [
-                draftId
-            ]);
-            return true
-        }
+        deleteDraft(Number(draftId));
     }
 
     // Retrieves summary data of all the drafts a user has created or joined
@@ -49,30 +33,6 @@ class DraftsModel {
         return drafts.rows;
     }
 
-    public async getInvites(req: Request) {
-        const invites = await db.query(`
-        SELECT DU.user_id, DU.draft_id, DU.is_invite_read, U.username, D.team_count, D.scoring_type
-        FROM draft_user AS DU
-        INNER JOIN draft AS D
-        ON DU.draft_id = D.draft_id
-        INNER JOIN user_account AS U
-        ON D.scheduled_by_user_id = U.user_id
-        WHERE DU.user_id = $1 AND DU.is_invite_accepted = FALSE`, [
-            req.query.userId
-        ]);
-
-        return invites.rows;
-    }
-
-    public async readInvites(req: Request) {
-        await db.query(`
-        UPDATE draft_user SET is_invite_read = TRUE WHERE user_id = $1`, [
-            req.query.userId
-        ]);
-
-        return 200;
-    }
-
     public async startDraft(req: Request) {
         await db.query(`
             UPDATE draft SET is_started=true WHERE draft_id=$1`, [
@@ -80,26 +40,6 @@ class DraftsModel {
             ]
         );
         return 200;
-    }
-
-    public async inviteUser(req: Request) {
-        const userData = await db.query(`
-            SELECT username, user_id FROM user_account WHERE username=$1`, [
-                req.body.username
-            ]
-        );
-
-        if (userData.rows.length>0) {
-            return {users: userData.rows, isMatch: true}
-        }
-        else {
-            const matches = await db.query(`
-                SELECT username, user_id FROM user_account WHERE username LIKE $1 LIMIT 5`, [
-                    `${req.body.username}%`
-                ]
-            );
-            return {users: matches.rows, isMatch: false}
-        }
     }
 
     public async toggleAutodraft(req: Request) {
@@ -132,11 +72,20 @@ class DraftsModel {
 
             if (draftId) {
                 const draft = await db.query(`
-                SELECT * 
-                FROM draft 
-                WHERE draft_id = $1`, [
-                    Number(draftId)
+                    SELECT * 
+                    FROM draft 
+                    WHERE draft_id = $1`, [
+                        Number(draftId)
                 ]);
+
+                const draftUsers = await db.query(`
+                    SELECT *
+                    FROM draft_user
+                    WHERE draft_id = $1`, [
+                        Number(draftId)
+                ]);
+
+                draft.rows[0]['draft_members'] = draftUsers.rows;
 
                 return draft.rows[0];
             }

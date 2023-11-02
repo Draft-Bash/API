@@ -98,8 +98,12 @@ app.get('/ping', (req, res) => {
 
 // Route containing endpoints related to users
 app.use("/api/v1/users", require("./routes/users"));
+
 // Route containing endpoints related to drafts
 app.use("/api/v1/drafts", require("./routes/drafts"));
+
+// Route containging endpoints related to draft invites
+app.use("/api/v1/draft-invites", require("./routes/draftInvites"));
 
 // Creates port listener
 const httpServer = app.listen(port, () => {
