@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 const DraftInvitesModel = require('../models/DraftInvitesModel');
 dotenv.config();
 
+// Gets all invites a user has.
 const getInvites = async (req: Request, res: Response) => {
     res.json(await DraftInvitesModel.getInvites(req));
 }
