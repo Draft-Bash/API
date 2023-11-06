@@ -150,7 +150,7 @@ export async function fetchAllPicks(draftId: string) {
 		LEFT JOIN nba_team AS T
 		ON P.team_id = T.team_id
 		WHERE D.draft_id = $1
-		ORDER BY D.pick_number DESC;
+		ORDER BY D.pick_number ASC;
 		`,
 		[draftId]
 	);
