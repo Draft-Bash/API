@@ -92,7 +92,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/ping', (req, res) => {
-  console.log("Responding to ping");
   res.json({ message: 'Server is awake!' });
 });
 
