@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { genLinearDraftOrder } from '../utils/genDraftOrder';
 import { genSnakeDraftOrder } from '../utils/genDraftOrder';
 import { Recipient, sendEmailInvites } from '../utils/sendInviteEmail';
-import { deleteDraft } from './draftsModel/deleteDraft';
+import { getUserDraftGrade } from '../utils/draft/draftGrade';
+import { sendDraftSummaryEmail } from '../utils/sendDraftSummaryEmail';
 const jwt = require('jsonwebtoken');
 import dotenv from 'dotenv';
 dotenv.config();
@@ -12,7 +13,37 @@ class DraftsModel {
 
     public async deleteDraft(req: Request) {
         const {draftId} = req.query;
-        deleteDraft(Number(draftId));
+        const isDraftStarted = await db.query(`
+            SELECT is_started FROM draft WHERE draft_id = $1 AND is_started = TRUE;`, [
+            draftId
+        ]);
+
+        if (isDraftStarted.rows.length>0) {
+            return false
+        }
+        else {
+            await db.query(`
+                DELETE FROM draft_user WHERE draft_id = $1;`, [
+                draftId
+            ]);
+            await db.query(`
+                DELETE FROM draft WHERE draft_id = $1;`, [
+                draftId
+            ]);
+            return true
+        }
+    }
+
+    public async sendDraftSummaryEmail(req: Request) {
+        const {userId, draftId, fanPtsTotal, draftRank, draftGrade} = req.body;
+
+        const email = await db.query(`
+            SELECT email FROM user_account WHERE user_id = $1;`, [
+            userId
+        ]);
+
+        sendDraftSummaryEmail(email.rows[0].email, draftId, fanPtsTotal, draftRank, draftGrade);
+        return 200;
     }
 
     // Retrieves summary data of all the drafts a user has created or joined
@@ -20,13 +51,13 @@ class DraftsModel {
         const userId = req.query.userId;
 
         const drafts = await db.query(`
-        SELECT U.user_id, D.draft_id, draft_type, U.username, team_count,
-        scheduled_by_user_id, draft_type, scoring_type, pick_time_seconds,
-        is_started
-        FROM draft_user AS DU
-        INNER JOIN draft AS D ON DU.draft_id = D.draft_id
-        INNER JOIN user_account AS U ON D.scheduled_by_user_id = U.user_id
-        WHERE DU.user_id = $1 AND DU.is_invite_accepted = TRUE;`, [
+            SELECT U.user_id, D.draft_id, draft_type, U.username, team_count,
+            scheduled_by_user_id, draft_type, scoring_type, pick_time_seconds,
+            is_started
+            FROM draft_user AS DU
+            INNER JOIN draft AS D ON DU.draft_id = D.draft_id
+            INNER JOIN user_account AS U ON D.scheduled_by_user_id = U.user_id
+            WHERE DU.user_id = $1 AND DU.is_invite_accepted = TRUE;`, [
             userId
         ]);
 
@@ -52,6 +83,11 @@ class DraftsModel {
 		);
         return 200
     }
+
+    public async getDraftGrade(req: Request) {
+        return getUserDraftGrade(Number(req.query.userId), Number(req.query.draftId));
+    }
+    
 
     public async getAutodraftStatus(req: Request) {
         const autodraftData = await db.query(
@@ -79,17 +115,36 @@ class DraftsModel {
                 ]);
 
                 const draftUsers = await db.query(`
-                    SELECT *
-                    FROM draft_user
-                    WHERE draft_id = $1`, [
+                    SELECT D.user_id, U.username
+                    FROM draft_user AS D
+                    INNER JOIN user_account as U
+                    ON D.user_id = U.user_id
+                    WHERE draft_id = $1
+                    AND D.user_id != (
+                        SELECT scheduled_by_user_id 
+                        FROM draft AS D
+                        WHERE D.draft_id = $1
+                    )`, [
+                        Number(draftId)
+                ]);
+
+                const ownerFirstPick = await db.query(`
+                    SELECT MIN(pick_number) AS owner_first_pick
+                    FROM draft_order
+                    WHERE draft_id = $1
+                    AND user_id = (
+                        SELECT scheduled_by_user_id FROM draft WHERE draft_id = $1
+                    )
+                    `, [
                         Number(draftId)
                 ]);
 
                 draft.rows[0]['draft_members'] = draftUsers.rows;
+                draft.rows[0]['owner_first_pick'] = ownerFirstPick.rows[0].owner_first_pick;
 
                 return draft.rows[0];
             }
-        } catch (error) {}
+        } catch (error) {console.log(error)}
     }
 
     // Gets all undrafted players that are currently in a draft
@@ -142,84 +197,6 @@ class DraftsModel {
             ]
         );
         return picks.rows;
-    }
-
-    public async updateMember(req: Request) {
-        const isInviteAccepted = req.body.isInviteAccepted;
-        const userId = req.body.userId;
-        const draftId = req.body.draftId;
-
-        if (isInviteAccepted) {
-            await db.query(
-                `UPDATE draft_user SET is_invite_accepted = $1
-                WHERE user_id = $2 AND draft_id = $3`, [
-                    isInviteAccepted, userId, draftId
-                ]
-            );
-        } else {
-            await db.query(
-                `UPDATE draft_order AS DO1
-                SET bot_number = (
-                    SELECT DO2.pick_number
-                    FROM draft_order AS DO2
-                    WHERE DO2.user_id = $1 AND DO2.draft_id = $2
-                    ORDER BY pick_number ASC
-                    LIMIT 1
-                ),
-                user_id = NULL
-                FROM draft as D
-                WHERE DO1.user_id = $1 AND DO1.draft_id = $2 AND D.draft_id = $2 AND D.is_started = FALSE;`, [
-                    userId, draftId
-                ]
-            );
-            await db.query(
-                `DELETE FROM draft_user WHERE user_id = $1 AND draft_id = $2`, [
-                    userId, draftId
-                ]
-            );
-        }
-
-        return 200;
-    }
-
-    public async emailUpdateMember(req: Request) {
-        const jwtUser = req.query.jwtUser;
-        const recipient = jwt.verify(jwtUser, process.env.JWT_SECRET);
-        const isInviteAccepted = (req.query.isInviteAccepted=='true') ? true : false;
-        const userId = Number(recipient.userId);
-        const draftId = Number(recipient.draftId);
-
-        if (isInviteAccepted) {
-            await db.query(
-                `UPDATE draft_user SET is_invite_accepted = $1
-                WHERE user_id = $2 AND draft_id = $3`, [
-                    isInviteAccepted, userId, draftId
-                ]
-            );
-        } else {
-            await db.query(
-                `UPDATE draft_order AS DO1
-                SET bot_number = (
-                    SELECT DO2.pick_number
-                    FROM draft_order AS DO2
-                    WHERE DO2.user_id = $1 AND DO2.draft_id = $2
-                    ORDER BY pick_number ASC
-                    LIMIT 1
-                ),
-                user_id = NULL
-                FROM draft as D
-                WHERE DO1.user_id = $1 AND DO1.draft_id = $2 AND D.is_started = FALSE;`, [
-                    userId, draftId
-                ]
-            );
-            await db.query(
-                `DELETE FROM draft_user WHERE user_id = $1 AND draft_id = $2`, [
-                    userId, draftId
-                ]
-            );
-        }
-
-        return 200;
     }
 
     // Gets all members in the draft
@@ -357,8 +334,119 @@ class DraftsModel {
 
         await sendEmailInvites(recipients, scheduledByUsername);
 
-    // Returns the draft id the draft that was created.
-    return createdDraft.rows[0].draft_id;
+        // Returns the draft id the draft that was created.
+        return createdDraft.rows[0].draft_id;
+    }
+
+    public async updateDraft(req: Request) {
+        let {draftType, scoringType, pickTimeSeconds,
+            teamCount, pointguardSlots, shootingguardSlots,
+            guardSlots, smallforwardSlots, powerforwardSlots, forwardSlots,
+            centerSlots, utilitySlots, benchSlots, draftId,
+            scheduledByUserId, scheduledByUsername, draftPosition, draftUserIds} = req.body;
+
+        const recipientIds = [...draftUserIds];
+
+        if (draftPosition-1<draftUserIds.length) {
+            draftUserIds.splice(draftPosition-1, 0, scheduledByUserId);
+        }
+            
+        // Sum of all position slots gives the total team size each team has
+        const teamSize = pointguardSlots+shootingguardSlots
+            +guardSlots+smallforwardSlots+powerforwardSlots
+            +forwardSlots+centerSlots+utilitySlots+benchSlots;
+    
+        // Creates and returns the draft
+        const updatedDraft = await db.query(
+            `UPDATE draft SET draft_type=$1, scoring_type=$2, pick_time_seconds=$3, 
+            team_count=$4, pointguard_slots=$5, shootingguard_slots=$6, guard_slots=$7, 
+            smallforward_slots=$8, powerforward_slots=$9, forward_slots=$10,
+            center_slots=$11, utility_slots=$12, bench_slots=$13, scheduled_by_user_id=$14
+            WHERE draft_id=$15
+            RETURNING draft_id`, [
+                draftType, scoringType, pickTimeSeconds, teamCount, pointguardSlots,
+                shootingguardSlots, guardSlots, smallforwardSlots, powerforwardSlots,
+                forwardSlots, centerSlots, utilitySlots, benchSlots, scheduledByUserId,
+                draftId
+            ]
+        );
+
+        await db.query(
+            `DELETE FROM draft_order WHERE draft_id=$1`, [draftId]
+        );
+
+        // Order of which pick each member has
+        let draftOrder: number[] = []
+
+        if (draftType == "snake") {
+            // Generates the draft order with a snake algorithm
+            draftOrder = genSnakeDraftOrder(teamCount, teamSize);
+        }
+        else if (draftType == "linear") {
+            // Generates the draft order with a linear algorithm
+            draftOrder = genLinearDraftOrder(teamCount, teamSize);
+        }
+
+        // Inserts the draft order into the database
+        let pickNumber = 1;
+        for (const order of draftOrder) {
+            if (order-1 < draftUserIds.length) {
+                await db.query(
+                `INSERT INTO draft_order (user_id, draft_id, pick_number)
+                VALUES ($1, $2, $3)`, [
+                    draftUserIds[order-1], updatedDraft.rows[0].draft_id, pickNumber
+                ]);
+            }
+            else if (order==draftPosition) {
+                await db.query(
+                    `INSERT INTO draft_order (user_id, draft_id, pick_number)
+                    VALUES ($1, $2, $3)`, [
+                    scheduledByUserId, updatedDraft.rows[0].draft_id, pickNumber
+                ]);
+            }
+            else {
+                await db.query(
+                    `INSERT INTO draft_order (bot_number, draft_id, pick_number)
+                    VALUES ($1, $2, $3)`, [
+                    order, updatedDraft.rows[0].draft_id, pickNumber
+                ]);
+            }
+            pickNumber += 1;
+        }
+
+        await db.query(
+            `DELETE FROM draft_user
+            WHERE user_id NOT IN (SELECT UNNEST($1::int[]))
+            AND user_id != (SELECT scheduled_by_user_id FROM draft WHERE draft_id = $2)
+            AND draft_id = $2;`, 
+            [draftUserIds, updatedDraft.rows[0].draft_id]
+        );
+
+        draftUserIds.forEach(async (userId: number) => {
+            if (userId != scheduledByUserId) {
+                await db.query(
+                    `INSERT INTO draft_user (user_id, draft_id)
+                    SELECT $1, $2 WHERE NOT EXISTS (
+                        SELECT 1 FROM draft_user WHERE user_id = $1 AND draft_id = $2
+                    )`, [userId, updatedDraft.rows[0].draft_id]
+                );
+            }
+        });
+
+        let recipients = await db.query(`
+            SELECT user_id AS "userId", username, email FROM user_account
+            WHERE user_id = ANY($1)
+            `, [recipientIds]);
+
+        recipients = recipients.rows.map((recipient: any) => ({
+            ...recipient, // Copy the existing properties of the object
+            draftId: updatedDraft.rows[0].draft_id, // Add the new key-value pair
+        }));
+
+        await sendEmailInvites(recipients, scheduledByUsername);
+
+        // Returns the draft id the draft that was created.
+        return updatedDraft.rows[0].draft_id;
     }
 }
   

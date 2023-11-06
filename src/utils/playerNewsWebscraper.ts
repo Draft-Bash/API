@@ -1,4 +1,3 @@
-
 import * as puppeteer from 'puppeteer';
 import { Player } from './draft';
 const db = require("../db");
@@ -45,13 +44,15 @@ async function run() {
                     analysis: analysis, playerTeam: playerTeam,
                 };
             });
-        
-            await db.query(`
-                UPDATE nba_player SET player_age = $1, team_id=(
-                    SELECT team_id FROM nba_team WHERE team_name = $2 LIMIT 1
-                    ) WHERE player_id = $3`, 
-                [news.playerAge, news.playerTeam, 201935]
-            );
+
+            if (news.playerAge && news.playerTeam) {
+                await db.query(`
+                    UPDATE nba_player SET player_age = $1, team_id=(
+                        SELECT team_id FROM nba_team WHERE team_name = $2 LIMIT 1
+                        ) WHERE player_id = $3`, 
+                    [news.playerAge, news.playerTeam, player.player_id]
+                );
+            }
         
             await db.query(`
                 UPDATE nba_player_news SET title=$1, summary=$2, analysis=$3, news_date=$4, injury_status=$5,fantasy_outlook=$6 

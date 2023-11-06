@@ -178,7 +178,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 			}
 
 			/* Fetch the current draft order so that it can be sent to the users
-        in the draft every time it's updated. */
+        	in the draft every time it's updated. */
 			const draftOrder = await fetchCurrentDraftOrder(roomId);
 			io.in(roomId).emit("send-draft-order", draftOrder);
 			const allPicks = await fetchAllPicks(roomId);
@@ -197,6 +197,10 @@ export async function createWebSocket(httpServer: HttpServer) {
 			const availablePlayers = await fetchAvailablePlayers(roomId);
 			io.in(roomId).emit("receive-available-players", availablePlayers);
 
+			socket.on('send-message', (message: string, username: string) => {
+				io.in(roomId).emit('receive-message', {message: message, username: username});
+			});
+
 			// Emit the current remaining time to the newly joined user
 			socket.emit("update-clock", remainingTimes[roomId]);
 
@@ -207,8 +211,8 @@ export async function createWebSocket(httpServer: HttpServer) {
 						autodraftStates.set(roomId, { isAuto, userId }); // Update autodraft state for the current room only
 						await db.query(
 							`UPDATE draft_user
-              SET is_autodraft_on=$1
-              WHERE user_id=$2 AND draft_id=$3`,
+							SET is_autodraft_on=$1
+							WHERE user_id=$2 AND draft_id=$3`,
 							[isAuto, userId, Number(roomId)]
 						);
 					}

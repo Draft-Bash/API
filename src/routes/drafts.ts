@@ -5,10 +5,7 @@ draftsRouter.route("/")
     .get(DraftsController.getDrafts)
     .post(DraftsController.createDraft)
     .delete(DraftsController.deleteDraft)
-
-draftsRouter.route("/invites")
-    .get(DraftsController.getInvites)
-    .put(DraftsController.readInvites)
+    .put(DraftsController.updateDraft)
 
 draftsRouter.route("/start/:id")
     .put(DraftsController.startDraft)
@@ -17,8 +14,9 @@ draftsRouter.route("/autodraft")
     .get(DraftsController.getAutodraftStatus)
     .post(DraftsController.toggleAutodraft)
 
-draftsRouter.route("/invite")
-    .post(DraftsController.inviteUser)
+draftsRouter.route("/grades")
+    .get(DraftsController.getDraftGrade)
+    .post(DraftsController.sendDraftSummaryEmail)
 
 draftsRouter.route("/players")
     .get(DraftsController.getPlayers)
@@ -29,11 +27,6 @@ draftsRouter.route("/picks")
 
 draftsRouter.route("/members")
     .get(DraftsController.getMembers)
-    .put(DraftsController.updateMember)
-
-// When user clicks on button in email, they will send a get request that will update the invitation.
-draftsRouter.route("/emails/members")
-    .get(DraftsController.emailUpdateMember)
 
 draftsRouter.route("/:id")
     .get(DraftsController.getDraft)
