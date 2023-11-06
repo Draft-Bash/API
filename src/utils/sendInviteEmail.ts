@@ -55,10 +55,10 @@ export async function sendEmailInvites(recipients: Recipient[], sentByUsername: 
         <body>
             <h1>${sentByUsername} has invited you to join their draft!</h1>
             <main>
-                <a href=${process.env.API_URL+"/drafts/emails/members?isInviteAccepted=true"+"&jwtUser="+jwtData}>
+                <a href=${process.env.API_URL+"/draft-invites/emails?isInviteAccepted=true"+"&jwtUser="+jwtData}>
                     <button class="accept">Accept</button>
                 </a>
-                <a href=${process.env.API_URL+"/drafts/emails/members?isInviteAccepted=false"+"&jwtUser="+jwtData}>
+                <a href=${process.env.API_URL+"/draft-invites/emails?isInviteAccepted=false"+"&jwtUser="+jwtData}>
                     <button class="decline">Decline</button>
                 </a>
             </main>
