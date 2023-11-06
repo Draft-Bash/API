@@ -448,6 +448,127 @@ class DraftsModel {
         // Returns the draft id the draft that was created.
         return updatedDraft.rows[0].draft_id;
     }
+
+    public async updateDraft(req: Request) {
+        let {draftType, scoringType, pickTimeSeconds,
+            teamCount, pointguardSlots, shootingguardSlots,
+            guardSlots, smallforwardSlots, powerforwardSlots, forwardSlots,
+            centerSlots, utilitySlots, benchSlots, draftId,
+            scheduledByUserId, scheduledByUsername, draftPosition, draftUserIds} = req.body;
+
+        const recipientIds = [...draftUserIds];
+
+        const previousMemberIds = await db.query(
+            `SELECT array_agg(user_id) AS user_ids FROM draft_user WHERE draft_id = $1`, [
+                draftId
+            ]
+        );
+
+        if (draftPosition-1<draftUserIds.length) {
+            draftUserIds.splice(draftPosition-1, 0, scheduledByUserId);
+        }
+            
+        // Sum of all position slots gives the total team size each team has
+        const teamSize = pointguardSlots+shootingguardSlots
+            +guardSlots+smallforwardSlots+powerforwardSlots
+            +forwardSlots+centerSlots+utilitySlots+benchSlots;
+    
+        // Creates and returns the draft
+        const updatedDraft = await db.query(
+            `UPDATE draft SET draft_type=$1, scoring_type=$2, pick_time_seconds=$3, 
+            team_count=$4, pointguard_slots=$5, shootingguard_slots=$6, guard_slots=$7, 
+            smallforward_slots=$8, powerforward_slots=$9, forward_slots=$10,
+            center_slots=$11, utility_slots=$12, bench_slots=$13, scheduled_by_user_id=$14
+            WHERE draft_id=$15
+            RETURNING draft_id`, [
+                draftType, scoringType, pickTimeSeconds, teamCount, pointguardSlots,
+                shootingguardSlots, guardSlots, smallforwardSlots, powerforwardSlots,
+                forwardSlots, centerSlots, utilitySlots, benchSlots, scheduledByUserId,
+                draftId
+            ]
+        );
+
+        // Order of which pick each member has
+        let draftOrder: number[] = []
+
+        if (draftType == "snake") {
+            // Generates the draft order with a snake algorithm
+            draftOrder = genSnakeDraftOrder(teamCount, teamSize);
+        }
+        else if (draftType == "linear") {
+            // Generates the draft order with a linear algorithm
+            draftOrder = genLinearDraftOrder(teamCount, teamSize);
+        }
+
+        await db.query(
+            `DELETE FROM draft_order WHERE draft_id=$1`, [draftId]
+          );
+          
+        // Inserts the draft order into the database
+        let pickNumber = 1;
+        for (const order of draftOrder) {
+        if (order-1 < draftUserIds.length) {
+            await db.query(
+            `INSERT INTO draft_order (user_id, draft_id, pick_number)
+            VALUES ($1, $2, $3)`, [
+                draftUserIds[order-1], updatedDraft.rows[0].draft_id, pickNumber
+            ]);
+        } else if (order === draftPosition) {
+            await db.query(
+            `INSERT INTO draft_order (user_id, draft_id, pick_number)
+            VALUES ($1, $2, $3)`, [
+                scheduledByUserId, updatedDraft.rows[0].draft_id, pickNumber
+            ]);
+        } else {
+            await db.query(
+            `INSERT INTO draft_order (bot_number, draft_id, pick_number)
+            VALUES ($1, $2, $3)`, [
+                order, updatedDraft.rows[0].draft_id, pickNumber
+            ]);
+        }
+        pickNumber += 1;
+          }
+
+        await db.query(
+            `DELETE FROM draft_user WHERE draft_id=$1`, [
+            draftId
+        ]);
+
+        /* Inserts the draft's users' ids into the draft_user table so 
+        that we know which drafts a user belongs to */
+        await db.query(
+            `INSERT INTO draft_user (user_id, draft_id, is_invite_accepted)
+            VALUES ($1, $2, $3)`, [
+                scheduledByUserId, updatedDraft.rows[0].draft_id, true
+            ]
+        );
+
+        draftUserIds.forEach(async (userId: number) => {
+            if (userId != scheduledByUserId) {
+                await db.query(
+                    `INSERT INTO draft_user (user_id, draft_id)
+                    VALUES ($1, $2)`, [
+                        userId, updatedDraft.rows[0].draft_id
+                    ]
+                );
+            }
+        });
+
+        let recipients = await db.query(`
+            SELECT user_id AS "userId", email FROM user_account
+            WHERE user_id = ANY($1) AND user_id != $2
+            AND user_id NOT IN (SELECT unnest($3::int[]));
+            `, [recipientIds, scheduledByUserId, previousMemberIds.rows[0].user_ids]);
+
+        recipients = recipients.rows.map((recipient: any) => ({
+            ...recipient, // Copy the existing properties of the object
+            draftId: updatedDraft.rows[0].draft_id, // Add the new key-value pair
+        }));
+
+        await sendEmailInvites(recipients, scheduledByUsername);
+
+        return updatedDraft.rows[0].draft_id;
+    }
 }
   
 module.exports = new DraftsModel();
