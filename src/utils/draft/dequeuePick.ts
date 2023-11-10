@@ -9,7 +9,8 @@ export async function dequeuePick(draftId: string, userId: number, ) {
         FROM draft_pick AS D
         INNER JOIN nba_player AS P
         ON D.player_id = P.player_id
-        WHERE D.picked_by_user_id = $1 AND D.draft_id = $2`,
+        WHERE D.picked_by_user_id = $1 AND D.draft_id = $2
+        ORDER BY D.pick_number DESC`,
         [Number(userId), Number(draftId)]
     );
     const rosterRules = await fetchDraftSettings(draftId);

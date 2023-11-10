@@ -66,5 +66,5 @@ export async function getUserDraftGrade(userId: number, draftId: number) {
         grade = 'F';
     }
 
-    return {grade: grade, rank: usersTotalFanPts.length-index, totalFanPts: usersTotalFanPts[0].fanPts}
+    return {grade: grade, rank: usersTotalFanPts.length-index, totalFanPts: usersTotalFanPts[index].fanPts}
 }
