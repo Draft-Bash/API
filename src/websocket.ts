@@ -198,7 +198,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 			io.in(roomId).emit("receive-available-players", availablePlayers);
 
 			socket.on('send-message', (message: string, username: string) => {
-				io.in(roomId).emit('receive-message', {message: message, username: username});
+				socket.broadcast.to(roomId).emit('receive-message', {message: message, username: username});
 			});
 
 			// Emit the current remaining time to the newly joined user
