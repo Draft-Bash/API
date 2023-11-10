@@ -29,7 +29,7 @@ async function run() {
             await page.goto(`https://www.rotowire.com/basketball/player/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}-${player.rotowire_id}`);
         
             const news: NewsData = await page.evaluate(() => {
-                const injuryStatus = document.querySelector('.tag.is-red.is-sm.bold')?.textContent?.trim();
+                const injuryStatus = document.querySelector('.tag.is-red.is-sm.bold')?.textContent?.trim().toUpperCase();
                 const fantasyOutlook = document.querySelector('.p-card__outlook-text')?.textContent?.trim().split('.').slice(0, -1).join('.')+'.';
                 const title = document.querySelector('.news-update__headline')?.textContent?.trim();
                 const date = document.querySelector('.news-update__timestamp')?.textContent?.trim();
