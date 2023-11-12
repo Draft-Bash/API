@@ -6,8 +6,11 @@ const port = process.env.PORT || '3000';
 const db = require("./db");
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { playerNewsWebscraper } from './utils/playerNewsWebscraper';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+
+const cron = require('node-cron');
 
 dotenv.config() 
 
@@ -112,3 +115,7 @@ const httpServer = app.listen(port, () => {
 // Creates the websocket, which will listen on the same port as the API.
 // In the production environment, the port is 443 (HTTPS)
 createWebSocket(httpServer);
+
+cron.schedule('0 16 1-31 10,11,12,1,2,3,4', () => {
+  playerNewsWebscraper();
+});

@@ -1,4 +1,9 @@
 export interface Player {
+    is_smallforward: boolean;
+    is_powerforward: boolean;
+    is_shootingguard: boolean;
+    is_pointguard: boolean;
+	is_center: boolean;
     first_name: string;
 	last_name: string;
 	player_age: number;
@@ -25,10 +30,8 @@ export interface BasketballRosterRules extends RosterRules {
 export interface BasketballPlayer extends Player {
 	is_pointguard: boolean;
 	is_shootingguard: boolean;
-	is_guard: boolean;
 	is_smallforward: boolean;
 	is_powerforward: boolean;
-	is_forward: boolean;
 	is_center: boolean;
 }
 
