@@ -34,16 +34,16 @@ module.exports = function () {
           try {
             // Adjust the query to match the nba_player_projections table
             const insertPromise = client.query(
-              'INSERT INTO nba_player_news VALUES ($1, $2)',
+              'INSERT INTO nba_player_news (player_id, rotowire_id) VALUES ($1, $2) ON CONFLICT (player_id) DO UPDATE SET rotowire_id = EXCLUDED.rotowire_id',
               [
                 row.player_id,
                 row.rotowire_id
               ]
             );
             insertPromises.push(insertPromise);
-            console.log('Inserted row:', row);
+            console.log('Inserted or updated row:', row);
           } catch (error) {
-            console.error('Error inserting row:', row);
+            console.error('Error inserting or updating row:', row);
             console.error(error.message);
           }
         })
@@ -53,12 +53,12 @@ module.exports = function () {
             await Promise.all(insertPromises);
             resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            console.error('Error inserting data:', error.message);
+            console.error('Error inserting or updating data:', error.message);
             reject(error); // Reject the promise in case of an error
           } finally {
             // Close the database connection
             client.end();
-            console.log('Data insertion completed.');
+            console.log('Data insertion or update completed.');
           }
         });
     } catch (error) {

@@ -34,7 +34,17 @@ module.exports = function () {
           try {
             // Adjust the query to match the nba_player_projections table
             const insertPromise = client.query(
-              'INSERT INTO nba_player_projections (player_id, points_total, rebounds_total, assists_total, blocks_total, steals_total, fieldgoal_percentage, freethrow_percentage, threepointers_total, games_played, minutes_played, turnovers_total) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+              `INSERT INTO nba_player_projections (player_id, points_total, rebounds_total, 
+                assists_total, blocks_total, steals_total, fieldgoal_percentage, 
+                freethrow_percentage, threepointers_total, games_played, minutes_played, 
+                turnovers_total) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+                ON CONFLICT (player_id) DO UPDATE SET points_total = EXCLUDED.points_total,
+                rebounds_total = EXCLUDED.rebounds_total, assists_total = EXCLUDED.assists_total,
+                blocks_total = EXCLUDED.blocks_total, steals_total = EXCLUDED.steals_total, 
+                fieldgoal_percentage = EXCLUDED.fieldgoal_percentage, 
+                freethrow_percentage = EXCLUDED.freethrow_percentage, 
+                threepointers_total = EXCLUDED.threepointers_total, games_played = EXCLUDED.games_played,
+                minutes_played = EXCLUDED.minutes_played, turnovers_total = EXCLUDED.turnovers_total`,
               [
                 row.player_id,
                 row.points_total,
@@ -51,9 +61,9 @@ module.exports = function () {
               ]
             );
             insertPromises.push(insertPromise);
-            console.log('Inserted row:', row);
+            console.log('Inserted or updated row:', row);
           } catch (error) {
-            console.error('Error inserting row:', row);
+            console.error('Error inserting or updating row:', row);
             console.error(error.message);
           }
         })
@@ -63,12 +73,12 @@ module.exports = function () {
             await Promise.all(insertPromises);
             resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            console.error('Error inserting data:', error.message);
+            console.error('Error inserting or updating data:', error.message);
             reject(error); // Reject the promise in case of an error
           } finally {
             // Close the database connection
             client.end();
-            console.log('Data insertion completed.');
+            console.log('Data insertion or update completed.');
           }
         });
     } catch (error) {

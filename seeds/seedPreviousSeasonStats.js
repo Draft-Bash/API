@@ -35,12 +35,24 @@ module.exports = function () {
         })
         .on('end', async () => {
           try {
+            const insertPromises = [];
+
             for (const row of data) {
-              // Insert each row into the database table
-              console.log(row);
-              await client.query(
-                'INSERT INTO nba_player_season_totals (player_id, season_name, games_played, minutes_played, fieldgoals_made, fieldgoals_attempted, threes_made, threes_attempted, freethrows_made, freethrows_attempted, rebounds_total, assists_total, steals_total, blocks_total, turnovers_total, points_total) ' +
-                  'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)',
+              // Insert or update each row into the database table and store the promise
+              const insertPromise = client.query(
+                `INSERT INTO nba_player_season_totals (player_id, season_name, games_played, 
+                  minutes_played, fieldgoals_made, fieldgoals_attempted, threes_made, 
+                  threes_attempted, freethrows_made, freethrows_attempted, rebounds_total, 
+                  assists_total, steals_total, blocks_total, turnovers_total, points_total)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
+                  ON CONFLICT (player_id, season_name) DO UPDATE SET
+                  games_played = EXCLUDED.games_played, minutes_played = EXCLUDED.minutes_played, 
+                  fieldgoals_made = EXCLUDED.fieldgoals_made, fieldgoals_attempted = EXCLUDED.fieldgoals_attempted, 
+                  threes_made = EXCLUDED.threes_made, threes_attempted = EXCLUDED.threes_attempted,
+                  freethrows_made = EXCLUDED.freethrows_made, freethrows_attempted = EXCLUDED.freethrows_attempted, 
+                  rebounds_total = EXCLUDED.rebounds_total, assists_total = EXCLUDED.assists_total, 
+                  steals_total = EXCLUDED.steals_total, blocks_total = EXCLUDED.blocks_total,
+                  turnovers_total = EXCLUDED.turnovers_total, points_total = EXCLUDED.points_total`,
                 [
                   row.player_id,
                   row.season_name,
@@ -60,12 +72,17 @@ module.exports = function () {
                   row.points_total,
                 ]
               );
-              console.log('Inserted row:', row);
+              insertPromises.push(insertPromise);
+              console.log('Inserted or updated row:', row);
             }
-            console.log('Data insertion completed.');
+
+            // Wait for all the insertion promises to resolve before closing the connection
+            await Promise.all(insertPromises);
+
+            console.log('Data insertion or update completed.');
             resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            console.error('Error inserting data:', error.message);
+            console.error('Error inserting or updating data:', error.message);
             reject(error); // Reject the promise in case of an error
           } finally {
             // Close the database connection

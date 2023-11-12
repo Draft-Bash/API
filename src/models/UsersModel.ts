@@ -62,20 +62,6 @@ class UsersModel {
         return {uniqueColumns: uniqueColumns, jwtToken: null};
     }
 
-    // Checks if the user's jwt token is verified
-    public async checkIfUserAuthenticated(req: Request) {
-        const jwtToken = req.header("token");
-        try {
-            /* Checks if the jwt token passed in is still valid. 
-            This is used to check if the logged in user has a currently valid jwt token.
-            A token expires every 2 hours. */
-            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
-            return user;
-        } catch (error) {
-            return false;
-        }
-    }
-
     // Checks if the user credentials are correct and generates a signed jwt token for the client to use
     public async loginUser(req: Request) {
         try {
@@ -100,6 +86,20 @@ class UsersModel {
             // Returns false if the login was wrong.
             return false;
         } catch (error) {}
+    }
+
+    // Checks if the user's jwt token is verified
+    public async checkIfUserAuthenticated(req: Request) {
+        const jwtToken = req.header("token");
+        try {
+            /* Checks if the jwt token passed in is still valid. 
+            This is used to check if the logged in user has a currently valid jwt token.
+            A token expires every 2 hours. */
+            const user = jwt.verify(jwtToken, process.env.JWT_SECRET, {expiresIn: "2hr"});
+            return user;
+        } catch (error) {
+            return false;
+        }
     }
 
     public async sendResetPasswordEmail(req: Request) {

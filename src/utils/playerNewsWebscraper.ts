@@ -13,7 +13,7 @@ interface NewsData {
     playerAge: number | null | undefined
 }
 
-async function run() {
+export async function playerNewsWebscraper() {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
@@ -75,5 +75,3 @@ async function run() {
 
     await browser.close();
 }
-
-run();
