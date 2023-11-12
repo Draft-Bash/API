@@ -32,9 +32,17 @@ module.exports = function () {
         .pipe(csvParser())
         .on('data', async (row) => {
           try {
-            // Insert each row into the database table and store the promise
+            // Insert or update each row into the database table and store the promise
             const insertPromise = client.query(
-              'INSERT INTO nba_player (player_id, player_age, first_name, last_name, is_pointguard, is_shootingguard, is_smallforward, is_powerforward, is_center, team_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+              `INSERT INTO nba_player (player_id, player_age, first_name, last_name, is_pointguard, is_shootingguard, 
+                is_smallforward, is_powerforward, is_center, team_id) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+                ON CONFLICT (player_id) 
+                DO UPDATE SET player_age = EXCLUDED.player_age, first_name = EXCLUDED.first_name, 
+                last_name = EXCLUDED.last_name, is_pointguard = EXCLUDED.is_pointguard, 
+                is_shootingguard = EXCLUDED.is_shootingguard, is_smallforward = EXCLUDED.is_smallforward, 
+                is_powerforward = EXCLUDED.is_powerforward, is_center = EXCLUDED.is_center, 
+                team_id = EXCLUDED.team_id`,
               [
                 row.player_id,
                 row.player_age,
@@ -49,9 +57,9 @@ module.exports = function () {
               ]
             );
             insertPromises.push(insertPromise);
-            console.log('Inserted row:', row);
+            console.log('Inserted or updated row:', row);
           } catch (error) {
-            console.error('Error inserting row:', row);
+            console.error('Error inserting or updating row:', row);
             console.error(error.message);
           }
         })
@@ -61,12 +69,12 @@ module.exports = function () {
             await Promise.all(insertPromises);
             resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            console.error('Error inserting data:', error.message);
+            console.error('Error inserting or updating data:', error.message);
             reject(error); // Reject the promise in case of an error
           } finally {
             // Close the database connection
             client.end();
-            console.log('Data insertion completed.');
+            console.log('Data insertion or update completed.');
           }
         });
     } catch (error) {

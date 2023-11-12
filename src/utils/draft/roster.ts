@@ -1,3 +1,4 @@
+import { DraftRoster } from "../draft";
 import { RosterList, BasketballRosterList, Player, BasketballPlayer, RosterRules,
 BasketballRosterRules, Roster} from "./types";
 
@@ -28,68 +29,71 @@ export class BasketballRoster extends Roster<BasketballRosterList, BasketballRos
         }
     }
 
-    // Method for shifting players within the basketball roster
-    protected shiftPlayer(player: BasketballPlayer, currentSpot: keyof BasketballRosterList, currentSpotIndex: number): boolean {
-        // Return false if the roster list doesn't exist
-        if (!this.rosterList) return false;
-
-        // Check various conditions for shifting based on player and current spot information
-        const isPlayerPosition = player[`is_${currentSpot}` as keyof BasketballPlayer];
-        const isBenchOrUtility = currentSpot === "bench" || currentSpot === "utility";
-        const isGuardPosition = (player.is_pointguard || player.is_shootingguard) && currentSpot === "guard";
-        const isForwardPosition = (player.is_smallforward || player.is_powerforward) && currentSpot === "forward";
-
-        // Logic for shifting players within the roster
-        for (const position of Object.keys(this.rosterList) as Array<keyof BasketballRosterList>) {
-            if (isPlayerPosition || isBenchOrUtility || isGuardPosition || isForwardPosition) {
-                let emptyIndex: number = this.rosterList[position].findIndex((slot) => slot === null);
-                if (emptyIndex !== -1) {
-                    this.rosterList[position][emptyIndex] = player;
-                    this.rosterList[currentSpot][currentSpotIndex] = null;
-                    return true;
+    protected shiftPlayer(
+        player: Player,
+        currentSpot: keyof DraftRoster,
+        currentSpotIndex: number
+    ): boolean {
+        if (this.rosterList) {
+            for (const position of Object.keys(this.rosterList) as Array<keyof DraftRoster>) {
+                if (
+                    player[`is_${String(position)}` as keyof Player] ||
+                    position === "bench" ||
+                    position === "utility" ||
+                    ((player.is_pointguard || player.is_shootingguard) &&
+                        position === "guard") ||
+                    ((player.is_smallforward || player.is_powerforward) &&
+                        position === "forward")
+                ) {
+                    let emptyIndex = this.rosterList[position].findIndex((slot) => slot === null);
+                    if (emptyIndex !== -1) {
+                        this.rosterList[position][emptyIndex] = player;
+                        this.rosterList[currentSpot][currentSpotIndex] = null;
+                        return true;
+                    }
                 }
             }
+            return false;
         }
-        return false;
+        else {
+            return false;
+        }
     }
 
     // Method for adding players to the basketball roster
-    public addPlayer(player: BasketballPlayer): boolean {
-        // Return false if the roster list doesn't exist
-        if (!this.rosterList) return false;
-
-        // Logic for adding players to the basketball roster
-        for (const position of Object.keys(this.rosterList) as Array<keyof BasketballRosterList>) {
-            if (
-                player[`is_${position}` as keyof BasketballPlayer] ||
-                position === "bench" ||
-                position === "utility" ||
-                ((player.is_pointguard || player.is_shootingguard) &&
-                position === "guard") ||
-                ((player.is_smallforward || player.is_powerforward) &&
-                position === "forward")
-            ) {
-                let emptyIndex = this.rosterList[position].findIndex((slot) => slot === null);
-                if (emptyIndex !== -1) {
-                this.rosterList[position][emptyIndex] = player;
-                return true;
-                } else {
-                for (let i = 0; i < this.rosterList[position].length; i++) {
-                    if (
-                    this.rosterList[position][i] &&
-                    this.shiftPlayer(
-                        this.rosterList[position][i] as BasketballPlayer,
-                        position,
-                        i
-                    )
-                    ) {
-                    this.rosterList[position][i] = player;
+    public addPlayer(player: Player): boolean {
+        if (this.rosterList) {
+            for (const position of Object.keys(this.rosterList) as Array<keyof DraftRoster>) {
+                if (
+                  player[`is_${position}` as keyof Player] ||
+                  position === "bench" ||
+                  position === "utility" ||
+                  ((player.is_pointguard || player.is_shootingguard) &&
+                    position === "guard") ||
+                  ((player.is_smallforward || player.is_powerforward) &&
+                    position === "forward")
+                ) {
+                  let emptyIndex = this.rosterList[position].findIndex((slot) => slot === null);
+                  if (emptyIndex !== -1) {
+                    this.rosterList[position][emptyIndex] = player;
                     return true;
+                  } else {
+                    for (let i = 0; i < this.rosterList[position].length; i++) {
+                      if (
+                        this.rosterList[position][i] &&
+                        this.shiftPlayer(this.rosterList[position][i] as Player, position, i)
+                      ) {
+                        this.rosterList[position][i] = player;
+                        return true;
+                      }
                     }
+                  }
                 }
-                }
-            }
-            }
-        return false;
+              }
+            return false;
+        }
+        else {
+            return false;
+        }
     }
 }

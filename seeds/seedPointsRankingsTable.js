@@ -35,18 +35,27 @@ module.exports = function () {
         })
         .on('end', async () => {
           try {
+            const insertPromises = [];
+
             for (const row of data) {
-              // Insert each row into the database table
-              await client.query(
-                'INSERT INTO points_draft_ranking (rank_number, player_id) VALUES ($1, $2)',
+              // Insert or update each row into the database table and store the promise
+              const insertPromise = client.query(
+                `INSERT INTO points_draft_ranking (rank_number, player_id) VALUES ($1, $2) 
+                ON CONFLICT (player_id) 
+                DO UPDATE SET rank_number = EXCLUDED.rank_number`,
                 [row.rank_number, row.player_id]
               );
-              console.log('Inserted row:', row);
+              insertPromises.push(insertPromise);
+              console.log('Inserted or updated row:', row);
             }
-            console.log('Data insertion completed.');
+
+            // Wait for all the insertion promises to resolve before closing the connection
+            await Promise.all(insertPromises);
+
+            console.log('Data insertion or update completed.');
             resolve(); // Resolve the promise to signal completion
           } catch (error) {
-            console.error('Error inserting data:', error.message);
+            console.error('Error inserting or updating data:', error.message);
             reject(error); // Reject the promise in case of an error
           } finally {
             // Close the database connection
