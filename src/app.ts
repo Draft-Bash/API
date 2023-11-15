@@ -9,6 +9,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { playerNewsWebscraper } from './utils/playerNewsWebscraper';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { test } from './utils/test';
 
 const cron = require('node-cron');
 
@@ -20,8 +21,8 @@ app.use(cors()); // Configures the cross site resource sharing policy
 app.use(express.json())
 app.use(passport.initialize())
 
-app.get('/test', (req, res) => {
-  res.send(process.env.GOOGLE_CLIENT_ID+" "+process.env.GOOGLE_CLIENT_SECRET+" "+process.env.GOOGLE_CALLBACK_URL);
+app.post('/test', async (req, res) => {
+  res.json(await test());
 });
 
 try {
@@ -116,6 +117,6 @@ const httpServer = app.listen(port, () => {
 // In the production environment, the port is 443 (HTTPS)
 createWebSocket(httpServer);
 
-cron.schedule('0 22 * * *', () => {
-  playerNewsWebscraper();
+cron.schedule('0 10 * * *', async () => {
+  await playerNewsWebscraper();
 });
