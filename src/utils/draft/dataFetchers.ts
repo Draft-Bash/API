@@ -26,7 +26,8 @@ export async function fetchAllPicks(draftId: string) {
 		PP.fieldgoal_percentage AS projected_fieldgoal_percentage,
 		PP.games_played AS projected_games_played, PP.minutes_played AS projected_minutes_played,
 		PP.turnovers_total AS projected_turnovers, PP.threepointers_total AS projected_threepointers,
-		N.news_date, N.injury_status, N.analysis, N.summary, N.title, N.fantasy_outlook, U.user_id, U.username
+		N.news_date, N.injury_status, N.analysis, N.summary, N.title, N.fantasy_outlook, 
+		U.user_id, U.username, D.picked_by_user_id, D.picked_by_bot_number, D.pick_number
 		FROM draft_pick AS D
 		LEFT JOIN points_draft_ranking AS R
 		ON D.player_id = R.player_id
@@ -43,7 +44,7 @@ export async function fetchAllPicks(draftId: string) {
 		LEFT JOIN user_account AS U
 		ON D.picked_by_user_id = U.user_id
 		WHERE D.draft_id = $1
-		ORDER BY D.pick_number DESC;
+		ORDER BY D.pick_number ASC;
 		`, [draftId]
 	);
 	return picks.rows;
@@ -140,7 +141,7 @@ export async function fetchRoster(roomId: string, userId: string) {
 		LEFT JOIN user_account AS U
 		ON D.picked_by_user_id = U.user_id
     WHERE D.picked_by_user_id = $1 AND D.draft_id = $2
-	ORDER BY pick_number`,
+	ORDER BY pick_number ASC`,
 		[userId, roomId]
 	);
 	return roster.rows;
