@@ -18,7 +18,7 @@ export async function playerNewsWebscraper() {
         SELECT first_name, last_name, P.player_id, rotowire_id 
         FROM nba_player AS P
         INNER JOIN nba_player_news AS N
-        ON P.player_id = N.player_id LIMIT 40;`
+        ON P.player_id = N.player_id;`
     );
 
     for (const player of players.rows) {
@@ -57,7 +57,8 @@ export async function playerNewsWebscraper() {
             }
 
             await db.query(`
-                UPDATE nba_player_news SET title=$1, summary=$2, analysis=$3, news_date=$4, injury_status=$5,fantasy_outlook=$6 
+                UPDATE nba_player_news SET title=$1, summary=$2, analysis=$3, 
+                news_date=$4, injury_status=$5,fantasy_outlook=$6 
                 WHERE player_id=$7`, [
                 news.title,
                 news.summary,
