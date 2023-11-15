@@ -116,6 +116,6 @@ const httpServer = app.listen(port, () => {
 // In the production environment, the port is 443 (HTTPS)
 createWebSocket(httpServer);
 
-cron.schedule('0 16 * * *', () => {
+cron.schedule('0 22 * * *', () => {
   playerNewsWebscraper();
 });
