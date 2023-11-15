@@ -13,7 +13,8 @@ interface NewsData {
     playerAge: number | null | undefined;
 }
 
-export async function playerNewsWebscraper() {
+export async function test() {
+
     const players = await db.query(`
         SELECT first_name, last_name, P.player_id, rotowire_id 
         FROM nba_player AS P
@@ -23,8 +24,7 @@ export async function playerNewsWebscraper() {
 
     for (const player of players.rows) {
         try {
-            const response = await axios.get(`https://www.rotowire.com/basketball/player/
-                ${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}-${player.rotowire_id}`);
+            const response = await axios.get(`https://www.rotowire.com/basketball/player/james-harden-3018`);
             const $ = cheerio.load(response.data);
 
             const injuryStatus = $('.tag.is-red.is-sm.bold').first().text().trim().toUpperCase();
@@ -67,11 +67,9 @@ export async function playerNewsWebscraper() {
                 news.fantasyOutlook,
                 player.player_id
             ]);
+            return 200
         } catch (error) {
-            console.log(error);
+            return error
         }
-
-        // Adding a delay of 6 seconds between each iteration
-        await new Promise(resolve => setTimeout(resolve, 10000));
     }
 }
