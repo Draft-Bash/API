@@ -117,6 +117,25 @@ const httpServer = app.listen(port, () => {
 // In the production environment, the port is 443 (HTTPS)
 createWebSocket(httpServer);
 
-cron.schedule('0 20 * * *', async () => {
-  await playerNewsWebscraper();
+cron.schedule('*/5 8-9 * * *', async () => {
+  try {
+      // Calculate the offset based on the total minutes passed since 8:00 AM
+      const offset = Math.floor((Date.now() - new Date().setHours(8, 0, 0, 0)) / (5 * 60 * 1000)) * 15;
+
+      // Fetch the next batch of players to scrape
+      const players = await db.query(`
+          SELECT first_name, last_name, P.player_id, rotowire_id 
+          FROM nba_player AS P
+          INNER JOIN nba_player_news AS N
+          ON P.player_id = N.player_id
+          ORDER BY news_date ASC
+          OFFSET ${offset}
+          LIMIT 15;
+      `);
+
+      // Call your playerNewsWebscraper function
+      await playerNewsWebscraper(players.rows);
+  } catch (error) {
+      console.error(error);
+  }
 });

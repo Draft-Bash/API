@@ -36,6 +36,7 @@ export interface DraftPick {
 
 // Define the Player interface
 export interface Player {
+    rotowire_id: any;
 	first_name: string;
 	last_name: string;
 	player_age: number;
