@@ -155,6 +155,7 @@ export async function createWebSocket(httpServer: HttpServer) {
 			} else {
 				try {
 					// Prevents users from accessing the draft again from the mock draft page.
+					console.log(roomId);
 					await db.query(`UPDATE draft_user SET is_invite_accepted = FALSE 
 					WHERE draft_id = $1`, [roomId]);
 				} catch (error) {console.log(error)}
@@ -180,6 +181,13 @@ export async function createWebSocket(httpServer: HttpServer) {
 			/* Fetch the current draft order so that it can be sent to the users
         	in the draft every time it's updated. */
 			const draftOrder = await fetchCurrentDraftOrder(roomId);
+			if (draftOrder.length == 0) {
+				// If there are no picks left, the draft is over and shouldn't be available anymore.
+				await db.query(
+					`UPDATE draft_user SET is_invite_accepted = FALSE 
+					WHERE draft_id = $1`, [roomId]
+				);
+			}
 			io.in(roomId).emit("send-draft-order", draftOrder);
 			const allPicks = await fetchAllPicks(roomId);
 			io.in(roomId).emit("update-total-draftpicks", allPicks);
