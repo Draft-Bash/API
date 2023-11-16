@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const db = require("../db");
+import { Player } from "./draft";
 
 interface NewsData {
     injuryStatus: string | null | undefined;
@@ -13,15 +14,9 @@ interface NewsData {
     playerAge: number | null | undefined;
 }
 
-export async function playerNewsWebscraper() {
-    const players = await db.query(`
-        SELECT first_name, last_name, P.player_id, rotowire_id 
-        FROM nba_player AS P
-        INNER JOIN nba_player_news AS N
-        ON P.player_id = N.player_id;`
-    );
+export async function playerNewsWebscraper(players: Player[]) {
 
-    for (const player of players.rows) {
+    for (const player of players) {
         try {
             const response = await axios.get(`https://www.rotowire.com/basketball/player/
                 ${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}-${player.rotowire_id}`);
@@ -35,6 +30,10 @@ export async function playerNewsWebscraper() {
             const analysis = $('.news-update__analysis').first().text().replace('ANALYSIS', "");
             const playerTeam = $('.p-card__player-info a').first().text().trim().split(" ").pop();
             const playerAge = Number($('.p-card__player-info div').first().text().split('-')[0]);
+
+            console.log(player.first_name+" "+player.last_name);
+            console.log(date);
+            console.log("");
 
             const news: NewsData = {
                 injuryStatus,
@@ -71,8 +70,5 @@ export async function playerNewsWebscraper() {
         } catch (error) {
             console.log(error);
         }
-
-        // Adding a delay of 6 seconds between each iteration
-        await new Promise(resolve => setTimeout(resolve, 10000));
     }
 }

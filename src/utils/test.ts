@@ -28,15 +28,6 @@ export async function test() {
         const playerTeam = $('.p-card__player-info a').first().text().trim().split(" ").pop();
         const playerAge = Number($('.p-card__player-info div').first().text().split('-')[0]);
 
-        console.log(injuryStatus);
-        console.log(fantasyOutlook);
-        console.log(title);
-        console.log(date);
-        console.log(summary);
-        console.log(analysis);
-        console.log(playerTeam);
-        console.log(playerAge);
-
         const news: NewsData = {
             injuryStatus,
             fantasyOutlook,
