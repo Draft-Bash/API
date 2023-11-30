@@ -26,7 +26,7 @@ class UsersModel {
         const duplicateEmails = await db.query(
             `SELECT * 
             FROM user_account 
-            WHERE email = $1 AND is_google_auth = TRUE `, [
+            WHERE email = $1 AND is_google_auth = FALSE `, [
             user.email
         ])
         uniqueColumns.isUsernameUnique = duplicateUsernames.rows.length < 1;

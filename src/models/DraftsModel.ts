@@ -13,25 +13,27 @@ class DraftsModel {
 
     public async deleteDraft(req: Request) {
         const {draftId} = req.query;
-        const isDraftStarted = await db.query(`
-            SELECT is_started FROM draft WHERE draft_id = $1 AND is_started = TRUE;`, [
+
+        await db.query(`
+            DELETE FROM draft_order WHERE draft_id = $1;`, [
             draftId
         ]);
-
-        if (isDraftStarted.rows.length>0) {
-            return false
-        }
-        else {
-            await db.query(`
-                DELETE FROM draft_user WHERE draft_id = $1;`, [
-                draftId
-            ]);
-            await db.query(`
-                DELETE FROM draft WHERE draft_id = $1;`, [
-                draftId
-            ]);
-            return true
-        }
+        await db.query(`
+            DELETE FROM draft_pick WHERE draft_id = $1;`, [
+            draftId
+        ]);
+        await db.query(`
+            DELETE FROM pick_queue WHERE draft_id = $1;`, [
+            draftId
+        ]);
+        await db.query(`
+            DELETE FROM draft_user WHERE draft_id = $1;`, [
+            draftId
+        ]);
+        await db.query(`
+            DELETE FROM draft WHERE draft_id = $1;`, [
+            draftId
+        ]);
     }
 
     public async sendDraftSummaryEmail(req: Request) {
@@ -51,15 +53,25 @@ class DraftsModel {
         const userId = req.query.userId;
 
         const drafts = await db.query(`
+            WITH draft_order_counts AS (
+                SELECT draft_id, COUNT(*)::INTEGER AS order_count
+                FROM draft_order
+                WHERE draft_id IN (SELECT draft_id FROM draft_user WHERE user_id = $1 AND is_invite_accepted = TRUE)
+                GROUP BY draft_id
+            )
+            
             SELECT U.user_id, D.draft_id, draft_type, U.username, team_count,
-            scheduled_by_user_id, draft_type, scoring_type, pick_time_seconds,
-            is_started
+                    scheduled_by_user_id, draft_type, scoring_type, pick_time_seconds,
+                    is_started, COALESCE("DO".order_count, 0) AS order_count, -- Use COALESCE to handle NULL counts
+                    pointguard_slots, shootingguard_slots, guard_slots,
+                    smallforward_slots, powerforward_slots, forward_slots, center_slots,
+                    utility_slots, bench_slots
             FROM draft_user AS DU
-            INNER JOIN draft AS D ON DU.draft_id = D.draft_id
-            INNER JOIN user_account AS U ON D.scheduled_by_user_id = U.user_id
-            WHERE DU.user_id = $1 AND DU.is_invite_accepted = TRUE;`, [
-            userId
-        ]);
+            LEFT JOIN draft AS D ON DU.draft_id = D.draft_id
+            LEFT JOIN user_account AS U ON D.scheduled_by_user_id = U.user_id
+            LEFT JOIN draft_order_counts AS "DO" ON D.draft_id = "DO".draft_id
+            WHERE DU.user_id = $1 AND DU.is_invite_accepted = TRUE;
+        `, [userId]);
 
         return drafts.rows;
     }
