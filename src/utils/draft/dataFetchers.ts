@@ -73,6 +73,12 @@ export async function fetchDraftSettings(roomId: string) {
 }
 
 export async function fetchAvailablePlayers(roomId: string) {
+
+	const draftType = await db.query(
+		`SELECT scoring_type FROM draft WHERE draft_id = $1;`,
+		[roomId]
+	);
+
 	let availablePlayers = await db.query(
 		`SELECT T.assists_total, T.blocks_total,
 		T.fieldgoals_attempted, T.threes_made, T.threes_attempted,
@@ -87,7 +93,7 @@ export async function fetchAvailablePlayers(roomId: string) {
 		PP.games_played AS projected_games_played, PP.minutes_played AS projected_minutes_played,
 		PP.turnovers_total AS projected_turnovers, PP.threepointers_total AS projected_threepointers,
 		N.news_date, N.injury_status, N.analysis, N.summary, N.title, N.fantasy_outlook
-		FROM points_draft_ranking AS R
+		FROM ${draftType.rows[0].scoring_type}_draft_ranking AS R
 		INNER JOIN nba_player as P
 		ON R.player_id = P.player_id
 		INNER JOIN nba_player_season_totals AS T

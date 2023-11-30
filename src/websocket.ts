@@ -153,12 +153,6 @@ export async function createWebSocket(httpServer: HttpServer) {
 					}
 				}, 1000); // Update every second
 			} else {
-				try {
-					// Prevents users from accessing the draft again from the mock draft page.
-					console.log(roomId);
-					await db.query(`UPDATE draft_user SET is_invite_accepted = FALSE 
-					WHERE draft_id = $1`, [roomId]);
-				} catch (error) {console.log(error)}
 				return;
 			}
 		} catch {}

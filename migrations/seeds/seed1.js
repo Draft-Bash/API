@@ -5,6 +5,7 @@ exports.seed = async function (knex) {
   const seedPreviousSeasonStats = require('../../seeds/seedPreviousSeasonStats');
   const seedNbaPlayerProjections = require('../../seeds/seedNbaPlayerProjections');
   const seedNbaPlayerNews = require('../../seeds/seedNbaPlayerNews');
+  const seedCategoryRankings = require('../../seeds/seedCategoryRankingsTable');
 
   try {
       // Start seeding sequentially
@@ -18,6 +19,8 @@ exports.seed = async function (knex) {
 
       await seedPointsRanking();
       console.log('Points ranking seeded successfully.');
+
+      await seedCategoryRankings();
 
       await seedPreviousSeasonStats();
       console.log('Previous season stats seeded successfully.');
