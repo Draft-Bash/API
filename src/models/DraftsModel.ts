@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { genLinearDraftOrder } from '../utils/genDraftOrder';
 import { genSnakeDraftOrder } from '../utils/genDraftOrder';
-import { Recipient, sendEmailInvites } from '../utils/sendInviteEmail';
+import { Recipient, sendEmailInvites } from '../utils/email/sendInviteEmail';
 import { getUserDraftGrade } from '../utils/draft/draftGrade';
-import { sendDraftSummaryEmail } from '../utils/sendDraftSummaryEmail';
+import { sendDraftSummaryEmail } from '../utils/email/sendDraftSummaryEmail';
 const jwt = require('jsonwebtoken');
 import dotenv from 'dotenv';
 dotenv.config();
@@ -99,7 +99,6 @@ class DraftsModel {
     public async getDraftGrade(req: Request) {
         return getUserDraftGrade(Number(req.query.userId), Number(req.query.draftId));
     }
-    
 
     public async getAutodraftStatus(req: Request) {
         const autodraftData = await db.query(

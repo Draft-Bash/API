@@ -5,6 +5,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
+    "sourceMap": true,
+    "lib": ["esnext"],
     "esModuleInterop": true
   },
   "include": ["src/**/*.ts", "src/utils/playerNewsWebscraper.ts"],

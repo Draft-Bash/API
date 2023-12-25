@@ -1,0 +1,22 @@
+POST http://localhost:3000/api/v1/drafts
+Content-Type: application/json
+
+{
+    "draft_type": "snake",
+    "scoring_type": "points",
+    "pick_time_seconds": 60,
+    "team_count": 10,
+    "pointguard_slots": 1,
+    "shootingguard_slots": 1,
+    "guard_slots": 1,
+    "smallforward_slots": 1,
+    "powerforward_slots": 1,
+    "forward_slots": 1,
+    "center_slots": 1,
+    "utility_slots": 1,
+    "bench_slots": 1,
+    "scheduled_by_user_id": 10,
+    "scheduled_by_username": "johndoe",
+    "draft_position": 1,
+    "invited_user_ids": []
+}

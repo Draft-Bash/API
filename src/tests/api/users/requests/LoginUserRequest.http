@@ -1,0 +1,1 @@
+GET http://localhost:3000/api/v1/users/login?jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMCwidXNlcm5hbWUiOiJzdGV2ZWYiLCJpYXQiOjE3MDMyMjg1NzgsImV4cCI6MTcwMzIzNTc3OH0.NNIAwGDnG88bwtlx6CZJNntkRLO_Xd8EbjyvRQOKMwg

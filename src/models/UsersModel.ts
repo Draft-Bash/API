@@ -3,7 +3,7 @@ const db = require("../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const emails = require('../utils/joinEmail')
-import { sendPasswordResetEmail } from '../utils/sendPasswordResetEmail';
+import { sendPasswordResetEmail } from '../utils/email/sendPasswordResetEmail';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -65,7 +65,7 @@ class UsersModel {
     // Checks if the user credentials are correct and generates a signed jwt token for the client to use
     public async loginUser(req: Request) {
         try {
-            const { username, email, password} = req.body;
+            const { username, email, password } = req.body;
             const user = await db.query(`
                 SELECT * 
                 FROM user_account 

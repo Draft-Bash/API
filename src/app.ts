@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { createWebSocket } from './websocket';
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || '3000';
@@ -10,6 +9,11 @@ import { playerNewsWebscraper } from './utils/playerNewsWebscraper';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { test } from './utils/test';
+import userRouter from './api/users/UserRoutes';
+import draftsRouter from './api/drafts/DraftsRoutes';
+import { ISocketService } from './websockets/ISocketService';
+import { SocketIOSocketService } from './websockets/SocketIOWebsocketService';
+import { DraftsObserver, DraftsSocket } from './websockets/draftsSocket/DraftWebsocket';
 
 const cron = require('node-cron');
 
@@ -100,12 +104,14 @@ app.get('/ping', (req, res) => {
 });
 
 // Route containing endpoints related to users
-app.use("/api/v1/users", require("./routes/users"));
+//app.use("/api/v1/users", require("./routes/users"));
+app.use("/api/v1/users", userRouter);
 
 // Route containing endpoints related to drafts
-app.use("/api/v1/drafts", require("./routes/drafts"));
+//app.use("/api/v1/drafts", require("./routes/drafts"));
+app.use("/api/v1/drafts", draftsRouter);
 
-// Route containging endpoints related to draft invites
+// Route containing endpoints related to draft invites
 app.use("/api/v1/draft-invites", require("./routes/draftInvites"));
 
 // Creates port listener
@@ -113,9 +119,46 @@ const httpServer = app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
 
-// Creates the websocket, which will listen on the same port as the API.
-// In the production environment, the port is 443 (HTTPS)
-createWebSocket(httpServer);
+const webSocketService: ISocketService = new SocketIOSocketService(httpServer);
+
+class DummyDraftObserver1 implements DraftsObserver {
+  onDraftOrderChange(room: string, draftOrder: string[]): void {
+    console.log(`Observer 1 in room ${room}: Draft order changed to ${draftOrder}`);
+  }
+
+  // Add logic to run when the timer is even
+  onDraftTimerEven(room: string, timerValue: number): void {
+    console.log(`Observer 1 in room ${room}: Timer is even - ${timerValue} seconds`);
+    // Add your specific logic here for even timer values
+  }
+
+  // Add logic to run when the timer is odd
+  onDraftTimerOdd(room: string, timerValue: number): void {
+    console.log(`Observer 1 in room ${room}: Timer is odd - ${timerValue} seconds`);
+    // Add your specific logic here for odd timer values
+  }
+}
+
+class DummyDraftObserver2 implements DraftsObserver {
+  onDraftOrderChange(room: string, draftOrder: string[]): void {
+    console.log(`Observer 2 in room ${room}: Draft order changed to ${draftOrder}`);
+  }
+
+  // Add logic to run when the timer is odd
+  onDraftTimerOdd(room: string, timerValue: number): void {
+    console.log(`Observer 2 in room ${room}: Timer is odd - ${timerValue} seconds`);
+    // Add your specific logic here for odd timer values
+  }
+
+  onDraftTimerEven(room: string, timerValue: number): void {
+    console.log(`Observer 2 in room ${room}: Timer is even - ${timerValue} seconds`);
+    // Add your specific logic here for even timer values
+  }
+}
+
+const draftsNamespace = webSocketService.createNamespace('/drafts');
+const draftsSocket = new DraftsSocket(draftsNamespace, [new DummyDraftObserver1(), new DummyDraftObserver2()]);
+draftsSocket.setupEventHandlers();
 
 cron.schedule('*/5 8-9 * * *', async () => {
   try {

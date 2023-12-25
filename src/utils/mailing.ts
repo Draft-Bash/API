@@ -31,14 +31,7 @@ export async function sendInvitationEmails() {
       from: 'DraftBashFantasy <draftbashfantasy@gmail.com>',
       to: emails,
       subject: 'New logo',
-      html: html_body,
-      attachments: [
-        {
-          filename: 'basketball.png',
-          path: './images/basketball.png',
-          cid: 'special',
-        },
-      ],
+      html: html_body
     });
   } catch (error) {
     console.log(error);

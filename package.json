@@ -7,13 +7,16 @@
     "test": "echo 'test'",
     "start": "node dist/app.js",
     "seed": "npx knex seed:run",
-    "dev": "npx knex migrate:latest & nodemon src/app.ts",
+    "dev": "npx prisma migrate up & npx nodemon src/app.ts",
     "build": "tsc & npx knex migrate:latest --env production"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@vitejs/plugin-vue": "^4.5.2",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.0.0-rc.12",
@@ -28,6 +31,7 @@
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.11.3",
+    "sequelize": "^6.35.2",
     "socket.io": "^4.7.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
@@ -36,12 +40,14 @@
     "@types/dotenv": "^8.2.0",
     "@types/express": "^4.17.19",
     "@types/jsonwebtoken": "^9.0.3",
+    "@types/node": "^20.10.4",
     "@types/nodemailer": "^6.4.10",
     "@types/passport": "^1.0.13",
     "@types/passport-google-oauth20": "^2.0.12",
     "@types/pg": "^8.10.3",
     "@types/socket.io": "^3.0.2",
     "csv-parser": "^3.0.0",
-    "pg-promise": "^11.5.4"
+    "pg-promise": "^11.5.4",
+    "prisma": "^5.7.0"
   }
 }
