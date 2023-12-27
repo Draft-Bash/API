@@ -14,6 +14,12 @@ const draftsController: DraftsController = new DraftsController(draftsService); 
 // Define the routes for user endpoints
 draftsRouter.route("/")
     .post(draftsController.createDraft)
-    .get(draftsController.getDraftsByUserId);
+    .get(draftsController.getDraftsByUserId)
+
+
+draftsRouter.route("/:draft_id")
+    .get(draftsController.getDraftById)
+    .put(draftsController.updateDraft)
+    .delete(draftsController.deleteDraftById)
 
 export default draftsRouter;

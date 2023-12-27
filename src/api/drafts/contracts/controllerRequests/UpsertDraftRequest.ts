@@ -1,4 +1,4 @@
-export interface CreateDraftRequest {
+export interface UpsertDraftRequest {
     draft_type: string;
     scoring_type: string;
     pick_time_seconds: number;

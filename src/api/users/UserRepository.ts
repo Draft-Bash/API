@@ -11,6 +11,13 @@ export class UserRepository implements IUserRepository {
         this.db = new DatabaseConnection();
     }
 
+    async getUsersLikeUsername(username: string): Promise<User[]> {
+        const users: User[] = await this.db.query(
+            `SELECT * FROM users WHERE username ILIKE $1`,
+            [`${username}%`]);
+        return users;
+    }
+
     async updateUserPassword(userId: number, password: string): Promise<void> {
         await this.db.query(`
             UPDATE users SET password = $1 WHERE user_id = $2;`, 

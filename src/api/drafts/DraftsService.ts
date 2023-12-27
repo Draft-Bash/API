@@ -1,10 +1,10 @@
 import { IDraftsRepository } from "./contracts/IDraftsRepository";
 import { IDraftsService } from "./contracts/IDraftsService";
-import { CreateDraftRequest } from "./contracts/controllerRequests/CreateDraftRequest";
 import { Draft } from "./contracts/dataTypes/Draft";
 import { DraftOrderFactory } from "../../utils/draft/draftOrder/DraftOrderFactory";
 import { IDraftInviteEmailer } from "../../utils/email/IDraftInviteEmailer";
 import { DraftInvite } from "./contracts/dataTypes/DraftInvite";
+import { UpsertDraftRequest } from "./contracts/controllerRequests/UpsertDraftRequest";
 
 export class DraftsService implements IDraftsService {
 
@@ -18,12 +18,24 @@ export class DraftsService implements IDraftsService {
         this._draftInviteEmailer = draftInviteEmailer;
     }
 
+    async deleteDraftById(draftId: number): Promise<void> {
+        await this._draftsRepository.deleteDraftById(draftId);
+    }
+
+    async getDraftById(draft_id: number): Promise<Draft> {
+        const draft: Draft | null = await this._draftsRepository.getDraftById(draft_id);
+        if (draft === null) {
+            throw new Error('DraftNotFoundError');
+        }
+        return draft;
+    }
+
     async getDraftsByUserId(user_id: number): Promise<Draft[]> {
         const drafts: Draft[] = await this._draftsRepository.getDraftsByUserId(user_id);
         return drafts;
     }
 
-    async updateDraft(updateDraftRequest: CreateDraftRequest, updated_draft_id: number): Promise<number> {
+    async updateDraft(updateDraftRequest: UpsertDraftRequest, updated_draft_id: number): Promise<number> {
 
          const teamSize: number = (
             updateDraftRequest.powerforward_slots + updateDraftRequest.powerforward_slots
@@ -57,7 +69,7 @@ export class DraftsService implements IDraftsService {
         return draft_id;
     }
 
-    async createDraft(createDraftRequest: CreateDraftRequest): Promise<number> {
+    async createDraft(createDraftRequest: UpsertDraftRequest): Promise<number> {
 
         const teamSize: number = (
             createDraftRequest.powerforward_slots + createDraftRequest.powerforward_slots

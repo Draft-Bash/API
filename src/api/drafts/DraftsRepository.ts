@@ -12,6 +12,19 @@ export class DraftsRepository implements IDraftsRepository {
         this._db = new DatabaseConnection();
     }
 
+    async deleteDraftById(draftId: number) {
+        await this._db.query(
+            `DELETE FROM drafts WHERE draft_id = $1`, [draftId]
+        );
+    }
+
+    async getDraftById(draft_id: number): Promise<Draft | null> {
+        const draft: Draft[] = await this._db.query(
+            `SELECT * FROM drafts WHERE draft_id = $1 LIMIT 1`, [draft_id]
+        );
+        return draft.length === 1 ? draft[0] : null;
+    }
+
     async getDraftsByUserId(user_id: number): Promise<Draft[]> {
         const drafts: Draft[] = await this._db.query(
             `SELECT * FROM draft_users AS DU
@@ -79,14 +92,15 @@ export class DraftsRepository implements IDraftsRepository {
     }
 
     async updateDraft(draft: Draft, draft_id: number): Promise<number> {
-        const draftId: number = (await this._db.query(
+        const updated_draft_id: number = (await this._db.query(
             `UPDATE drafts
             SET draft_type = $1, scoring_type = $2, pick_time_seconds = $3, 
                 team_count = $4, pointguard_slots = $5, shootingguard_slots = $6, 
                 guard_slots = $7, smallforward_slots = $8, powerforward_slots = $9, 
                 forward_slots = $10, center_slots = $11, utility_slots = $12, 
                 bench_slots = $13, scheduled_by_user_id = $14
-            WHERE draft_id = $15`, [
+            WHERE draft_id = $15
+            RETURNING draft_id`, [
                 draft.draft_type, draft.scoring_type, draft.pick_time_seconds, 
                 draft.team_count, draft.pointguard_slots, draft.shootingguard_slots, 
                 draft.guard_slots, draft.smallforward_slots, draft.powerforward_slots, 
@@ -94,7 +108,7 @@ export class DraftsRepository implements IDraftsRepository {
                 draft.bench_slots, draft.scheduled_by_user_id, draft_id
             ]
         ))[0].draft_id;
-        return draft_id
+        return updated_draft_id
     }
 
     async deleteDraftOrder(draftId: number): Promise<void> {

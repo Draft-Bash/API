@@ -11,6 +11,7 @@ import { sendPasswordResetEmail } from "../../utils/email/sendPasswordResetEmail
 import { UserCredentials } from "./contracts/dataTypes/UserCredentials";
 import { IJwtTokenHandler } from "../../utils/users/authentication/IJwtTokenHandler";
 import { IPasswordHandler } from "../../utils/users/authentication/IPasswordHandler";
+import { SearchUsersByUsernameResponse } from "./contracts/controllerResponses/SearchUsersByUsernameResponse";
 dotenv.config();
 
 export class UserService implements IUserService {
@@ -23,6 +24,22 @@ export class UserService implements IUserService {
         this._userRepository = userRepository;
         this._jwtTokenHandler = jwtTokenHandler;
         this._passwordHandler = passwordHandler;
+    }
+
+    async searchUsersByUsername(username: string): Promise<SearchUsersByUsernameResponse> {
+        let matching_user: User[] | null  = await this._userRepository.getUsersByUsername(username);
+        const similar_users: User[] = await this._userRepository.getUsersLikeUsername(username);
+        const usernames = similar_users.map((user: User) => user.username);
+
+        if (matching_user.length > 0) {
+            return {
+                matching_user: {user_id: matching_user[0].user_id, username: matching_user[0].username}, 
+                similar_users: usernames
+            };
+        }
+        else {
+            return { matching_user: null, similar_users: usernames};
+        }
     }
 
     async updateUserPassword(userId: number, password: string): Promise<void> {

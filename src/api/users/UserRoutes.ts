@@ -20,11 +20,14 @@ const userController: UserController = new UserController(userService); // Handl
 userRouter.route("/reset-passwords/emails")
     .post(userController.emailPasswordReset)
 
+userRouter.route("/search")
+    .post(userController.searchUsersByUsername)
+
 // POST /users
 userRouter.post("/", userController.createUser);
 
 // PUT /users/:userId
-userRouter.put("/:userId", userController.updateUserPassword);
+userRouter.put("/:user_id", userController.updateUserPassword);
 
 userRouter.route("/login")
     .post(userController.loginUser)

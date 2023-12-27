@@ -13,7 +13,9 @@ import userRouter from './api/users/UserRoutes';
 import draftsRouter from './api/drafts/DraftsRoutes';
 import { ISocketService } from './websockets/ISocketService';
 import { SocketIOSocketService } from './websockets/SocketIOWebsocketService';
-import { DraftsObserver, DraftsSocket } from './websockets/draftsSocket/DraftWebsocket';
+import { DraftsSocket } from './websockets/draftsSocket/DraftsSocket';
+import { DraftObserverBase } from './websockets/draftsSocket/DraftObserverBase';
+import { UserPicksDraftObserver } from './websockets/draftsSocket/UserPicksDraftObserver';
 
 const cron = require('node-cron');
 
@@ -121,43 +123,9 @@ const httpServer = app.listen(port, () => {
 
 const webSocketService: ISocketService = new SocketIOSocketService(httpServer);
 
-class DummyDraftObserver1 implements DraftsObserver {
-  onDraftOrderChange(room: string, draftOrder: string[]): void {
-    console.log(`Observer 1 in room ${room}: Draft order changed to ${draftOrder}`);
-  }
-
-  // Add logic to run when the timer is even
-  onDraftTimerEven(room: string, timerValue: number): void {
-    console.log(`Observer 1 in room ${room}: Timer is even - ${timerValue} seconds`);
-    // Add your specific logic here for even timer values
-  }
-
-  // Add logic to run when the timer is odd
-  onDraftTimerOdd(room: string, timerValue: number): void {
-    console.log(`Observer 1 in room ${room}: Timer is odd - ${timerValue} seconds`);
-    // Add your specific logic here for odd timer values
-  }
-}
-
-class DummyDraftObserver2 implements DraftsObserver {
-  onDraftOrderChange(room: string, draftOrder: string[]): void {
-    console.log(`Observer 2 in room ${room}: Draft order changed to ${draftOrder}`);
-  }
-
-  // Add logic to run when the timer is odd
-  onDraftTimerOdd(room: string, timerValue: number): void {
-    console.log(`Observer 2 in room ${room}: Timer is odd - ${timerValue} seconds`);
-    // Add your specific logic here for odd timer values
-  }
-
-  onDraftTimerEven(room: string, timerValue: number): void {
-    console.log(`Observer 2 in room ${room}: Timer is even - ${timerValue} seconds`);
-    // Add your specific logic here for even timer values
-  }
-}
-
 const draftsNamespace = webSocketService.createNamespace('/drafts');
-const draftsSocket = new DraftsSocket(draftsNamespace, [new DummyDraftObserver1(), new DummyDraftObserver2()]);
+const draftsSocket = new DraftsSocket(draftsNamespace);
+draftsSocket.addObserver(new UserPicksDraftObserver())
 draftsSocket.setupEventHandlers();
 
 cron.schedule('*/5 8-9 * * *', async () => {

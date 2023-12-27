@@ -6,6 +6,7 @@ import { LoginUserRequest } from './contracts/controllerRequests/LoginUserReques
 import { UserJwtResponse } from './contracts/controllerResponses/UserJwtResponse';
 import { User } from './contracts/dataTypes/User';
 import { UserToken } from './contracts/dataTypes/UserToken';
+import { SearchUsersByUsernameResponse } from './contracts/controllerResponses/SearchUsersByUsernameResponse';
 
 export class UserController {
 
@@ -13,6 +14,21 @@ export class UserController {
 
     constructor(userService: IUserService) {
         this._userService = userService;
+    }
+
+    searchUsersByUsername = async (req: Request, res: Response) => {
+        try {
+            const username: string = req.body.username as string;
+            const result: SearchUsersByUsernameResponse = await this._userService.searchUsersByUsername(username);
+            res.status(200).send(result);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                res.status(500).send({ error: error.message });
+            }
+            else {
+                res.status(500).send({ error: 'An unknown error occurred.' });
+            }
+        }
     }
 
     createUser = async (req: Request, res: Response) => {
@@ -93,9 +109,9 @@ export class UserController {
 
     updateUserPassword = async (req: Request, res: Response) => {
         try {
-            const userId: number = Number(req.params.userId);
+            const user_id: number = Number(req.params.user_id);
             const email: string = req.body.email as string;
-            await this._userService.updateUserPassword(userId, email);
+            await this._userService.updateUserPassword(user_id, email);
             res.sendStatus(200)
         } catch (error: unknown) {
             if (error instanceof Error) {
