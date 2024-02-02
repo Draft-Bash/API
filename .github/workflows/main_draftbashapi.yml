@@ -21,6 +21,18 @@ jobs:
         with:
           node-version: '18.x'
 
+      - name: Set up environment variables
+        run: |
+          echo "DB_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD }}" > .env
+          echo "DB_USER=stephenpfeddes" >> .env
+          echo "DB_HOST=ep-weathered-wind-21075129-pooler.us-east-2.aws.neon.tech" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_NAME=neondb" >> .env
+          echo "SSL=true" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+          echo "CLIENT_URL=https://draftbashfantasy.com" >> .env
+          echo "API_URL=https://draftbash.azurewebsites.net/api/v1" >> .env
+
       - name: npm install, build, and test
         run: |
           npm install
