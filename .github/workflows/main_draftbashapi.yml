@@ -21,6 +21,16 @@ jobs:
         with:
           node-version: '18.x'
 
+      - name: Set up environment variables
+        run: |
+          echo "DB_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD }}" > .env
+          echo "DB_USER=stevepfeddes" >> .env
+          echo "DB_HOST=ep-falling-snowflake-a5k02nv6.us-east-2.aws.neon.tech" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_NAME=neondb" >> .env
+          echo "SSL=true" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+
       - name: npm install, build, and test
         run: |
           npm install
