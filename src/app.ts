@@ -3,11 +3,7 @@ import { createWebSocket } from './websocket';
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || '3000';
-const db = require("./db");
 import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { playerNewsWebscraper } from './utils/playerNewsWebscraper';
-import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { test } from './utils/test';
 
@@ -50,26 +46,3 @@ const httpServer = app.listen(port, () => {
 // Creates the websocket, which will listen on the same port as the API.
 // In the production environment, the port is 443 (HTTPS)
 createWebSocket(httpServer);
-
-cron.schedule('*/5 8-9 * * *', async () => {
-  try {
-      // Calculate the offset based on the total minutes passed since 8:00 AM
-      const offset = Math.floor((Date.now() - new Date().setHours(8, 0, 0, 0)) / (5 * 60 * 1000)) * 15;
-
-      // Fetch the next batch of players to scrape
-      const players = await db.query(`
-          SELECT first_name, last_name, P.player_id, rotowire_id 
-          FROM nba_player AS P
-          INNER JOIN nba_player_news AS N
-          ON P.player_id = N.player_id
-          ORDER BY news_date ASC
-          OFFSET ${offset}
-          LIMIT 15;
-      `);
-
-      // Call your playerNewsWebscraper function
-      await playerNewsWebscraper(players.rows);
-  } catch (error) {
-      console.error(error);
-  }
-});
