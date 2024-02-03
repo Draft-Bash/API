@@ -3,6 +3,7 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || "3000";
 import dotenv from "dotenv";
+import { createWebSocket } from "./websocket";
 
 dotenv.config();
 
@@ -32,3 +33,5 @@ app.use("/api/v1/draft-invites", require("./routes/draftInvites"));
 const httpServer = app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
 });
+
+createWebSocket(httpServer);
