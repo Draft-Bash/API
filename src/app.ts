@@ -3,9 +3,7 @@ import { createWebSocket } from './websocket';
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || '3000';
-import passport from 'passport';
 import dotenv from 'dotenv';
-import { test } from './utils/test';
 
 const cron = require('node-cron');
 
@@ -15,11 +13,7 @@ app.use(express.json());
 app.use(cors()); // Configures the cross site resource sharing policy
 
 app.use(express.json())
-app.use(passport.initialize())
 
-app.post('/test', async (req, res) => {
-  res.json(await test());
-});
 
 app.get('/', (req, res) => {
   res.send('Hello, TypeScript Express!');
